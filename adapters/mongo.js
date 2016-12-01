@@ -3,7 +3,8 @@ const path = require('path');
 const Promisie = require('promisie');
 const xss = require('xss');
 const flatten = require('flat');
-const utility = require(path.join(__dirname, '../../utility/index'));
+const utility = require(path.join(__dirname, '../utility/index'));
+const xss_default_whitelist = require(path.join(__dirname, '../defaults/index')).xss_whitelist();
 
 /**
  * Convenience method for .find mongo method
@@ -19,8 +20,10 @@ const utility = require(path.join(__dirname, '../../utility/index'));
 const _SEARCH = function (options, cb) {
 	try {
 		let Model = options.model || this.model;
+		//Iteratively checks if value was passed in options argument and conditionally assigns the default value if not passed in options
 		let { sort, limit, population, fields, skip } = ['sort','limit','population','fields','skip'].reduce((result, key) => {
 			result[key] = options[key] || this[key];
+			return result;
 		}, {});
 		Model.find((options.query && typeof options.query === 'object') ? options.query : {}, fields)
 			.sort(sort)
@@ -48,8 +51,10 @@ const _SEARCH = function (options, cb) {
 const _STREAM = function (options, cb) {
 	try {
 		let Model = options.model || this.model;
+		//Iteratively checks if value was passed in options argument and conditionally assigns the default value if not passed in options
 		let { sort, limit, population, fields, skip } = ['sort','limit','population','fields','skip'].reduce((result, key) => {
 			result[key] = options[key] || this[key];
+			return result;
 		}, {});
 		let stream = Model.find((options.query && typeof options.query === 'object') ? options.query : {}, fields)
 			.sort(sort)
@@ -79,8 +84,10 @@ const _STREAM = function (options, cb) {
 const _SEARCH_WITH_PAGINATION = function (options, cb) {
 	try {
 		let Model = options.model || this.model;
+		//Iteratively checks if value was passed in options argument and conditionally assigns the default value if not passed in options
 		let { sort, limit, population, fields, skip, pagelength } = ['sort','limit','population','fields','skip','pagelength'].reduce((result, key) => {
 			result[key] = options[key] || this[key];
+			return result;
 		}, {});
 		let pages = {};
 		let total = 0;
@@ -123,11 +130,13 @@ const _SEARCH_WITH_PAGINATION = function (options, cb) {
 const _LOAD = function (options, cb) {
 	try {
 		let Model = options.model || this.model;
+		//Iteratively checks if value was passed in options argument and conditionally assigns the default value if not passed in options
 		let { sort, population, fields, docid } = ['sort','population','fields','docid'].reduce((result, key) => {
 			result[key] = options[key] || this[key];
+			return result;
 		}, {});
 		let query = (options.query && typeof options.query === 'object') ? options.query : {
-			[docid || '_id']: options.query
+			[(utility.isObjectId(options.query)) ? '_id' : (docid || '_id')]: options.query
 		};
 		Model.findOne(query, fields)
 			.sort(sort)
@@ -174,19 +183,50 @@ const GENERATE_PUT = function (data) {
  * @param {Boolean} options.isPatch If true the update will be treated as a patch instead of a full document update
  * @param {Object} options.updatedoc Either specific fields to update in the case of a patch otherwise the entire updatedated document
  * @param {string} options.id The mongo _id of the document that should be updated
+ * @param {Boolean} [options.skip_xss] If true xss character escaping will be skipped and xss whitelist is ignored
+ * @param {Boolean} [options.html_xss] If true xss npm module will be used for character escaping
+ * @param {Boolean} [options.track_changes] If false changes will not be tracked
+ * @param {Boolean} [options.ensure_changes] If true changeset generation and saving is blocking and errors will cause entire operation to fail
  * @param {Object} [options.model=this.model] The mongoose model for query will default to the this.model value if not defined
  * @param  {Function} cb      Callback function for update
  */
 const _UPDATE = function (options, cb) {
 	try {
+		options.track_changes = (typeof options.track_changes === 'boolean') ? options.track_changes : this.track_changes;
+		let changesetData = {
+			update: Object.assign({}, options.updatedoc),
+			original: Object.assing({}, options.originalrevision)
+		};
+		let generateChanges = (callback) => {
+			if (!options.track_changes || (options.track_changes && !options.ensure_changes)) callback();
+			if (options.track_changes) {
+				let changeset = utility.diff(changesetData.original, changesetData.update, depopulate);
+				this.changeset.create({
+					parent_document: { id: options.id },
+					changes: changeset
+				}, (err, result) => {
+					if (options.ensure_changes) {
+						if (err) callback(err);
+						else callback(null, result);
+					}
+				});
+			}
+		};
 		let usePatch = options.isPatch;
 		let depopulate = (options.depopulate === false) ? false : true;
 		let xss_whitelist = (options.xss_whitelist) ? options.xss_whitelist : this.xss_whitelist;
 		options.updatedoc = (depopulate) ? utility.depopulate(options.updatedoc) : options.updatedoc;
-		options.updatedoc = (xss_whitelist) ? JSON.parse(xss(JSON.stringify(options.updatedoc), xss_whitelist)) : options.updatedoc;
+		options.updatedoc = utility.enforceXSSRules(options.updatedoc, xss_whitelist, options);
 		let updateOperation = (usePatch) ? GENERATE_PATCH(options.updatedoc) : GENERATE_PUT(options.updatedoc);
 		let Model = options.model || this.model;
-		Model.update({ _id: options.id }, updateOperation, cb);
+		Promisie.parallel({
+			update: Promisie.promisify(Model.update, Model)({ _id: options.id }, updateOperation),
+			changes: Promisie.promisify(generateChanges)()
+		})
+			.then(result => {
+				if (options.ensure_changes) cb(null, result);
+				else cb(null, result.update);
+			}, cb);
 	}
 	catch (e) {
 		cb(e);
@@ -199,6 +239,10 @@ const _UPDATE = function (options, cb) {
  * @param {Boolean} options.isPatch If true the update will be treated as a patch instead of a full document update
  * @param {Object} options.updatedoc Either specific fields to update in the case of a patch otherwise the entire updatedated document
  * @param {string} options.id The mongo _id of the document that should be updated
+ * @param {Boolean} [options.skip_xss] If true xss character escaping will be skipped and xss whitelist is ignored
+ * @param {Boolean} [options.html_xss] If true xss npm module will be used for character escaping
+ * @param {Boolean} [options.track_changes] If false changes will not be tracked
+ * @param {Boolean} [options.ensure_changes] If true changeset generation and saving is blocking and errors will cause entire operation to fail
  * @param {Object} [options.model=this.model] The mongoose model for query will default to the this.model value if not defined
  * @param  {Function} cb      Callback function for update
  */
@@ -219,7 +263,9 @@ const _UPDATED = function (options, cb) {
  * @param  {Object}   options Configurable options for mongo create
  * @param {Object} [options.model=this.model] The mongoose model for query will default to the this.model value if not defined
  * @param {Object} [options.newdoc=options] The document that should be created. If newdoc option is not passed it is assumed that the entire options object is the document
- * @param {string[]}  [options.xss_whitelist=this.xss_whitelist] XSS white-list configuration
+ * @param {Boolean} [options.skip_xss] If true xss character escaping will be skipped and xss whitelist is ignored
+ * @param {Boolean} [options.html_xss] If true xss npm module will be used for character escaping
+ * @param {Object}  [options.xss_whitelist=this.xss_whitelist] XSS white-list configuration for xss npm module
  * @param  {Function} cb      Callback function for create
  */
 const _CREATE = function (options, cb) {
@@ -227,7 +273,7 @@ const _CREATE = function (options, cb) {
 		let Model = options.model || this.model;
 		let newdoc = options.newdoc || options;
 		let xss_whitelist = (options.xss_whitelist) ? options.xss_whitelist : this.xss_whitelist;
-		Model.create((xss_whitelist) ? JSON.parse(xss(JSON.stringify(newdoc), xss_whitelist)) : newdoc, cb);
+		Model.create(utility.enforceXSSRules(newdoc, xss_whitelist, (options.newdoc) ? options : undefined), cb);
 	}
 	catch (e) {
 		cb(e);
@@ -295,6 +341,8 @@ const MONGO_ADAPTER = class Mongo_Adapter {
 	 * @param {Object|string} [options.population] Optional population configuration for documents returned in .load and .search queries
 	 * @param {Object} [options.fields] Optional configuration for limiting fields that are returned in .load and .search queries
 	 * @param {number} [options.pagelength=15] Specifies max number of documents that should appear in each sub-set for pagination
+	 * @param {Boolean} [options.track_changes=true] Sets default track changes behavior for udpates
+	 * @param {Object} [options.changeset] Overwrites default changeset model should have a custom create method if using a custom schema
 	 * @param {string[]} [options.xss_whitelist=false] Configuration for XSS whitelist package. If false XSS whitelisting will be ignored
 	 */
 	constructor (options = {}) {
@@ -307,7 +355,9 @@ const MONGO_ADAPTER = class Mongo_Adapter {
 		this.fields = options.fields;
 		this.pagelength = options.pagelength || 15;
 		this.cache = options.cache;
-		this.xss_whitelist = options.xss_whitelist || false;
+		this.track_changes = options.track_changes || true;
+		this.changeset = options.changeset || require(path.join(__dirname, '../changeset/index')).mongo;
+		this.xss_whitelist = options.xss_whitelist || xss_default_whitelist;
 		this._useCache = (options.useCache && options.cache) ? true : false;
 	}
 	/**

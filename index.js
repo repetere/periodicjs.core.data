@@ -46,5 +46,6 @@ module.exports = new DB_ADAPTER_INTERFACE({
 	search: 'function',
 	update: 'function',
 	delete: 'function',
-	create: 'function'
+	create: 'function',
+	stream: 'function'
 });
