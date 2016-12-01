@@ -10,15 +10,16 @@ const xss_default_whitelist = require(path.join(__dirname, '../defaults/index'))
 /**
  * Convenience method for .find mongo method
  * @param  {Object}   options Options for the mongo query
+ * @param {Object} [options.query={}] The query that should be used for the database search
  * @param {Object} [options.model=this.model] The mongoose model for query will default to the this.model value if not defined
  * @param {string} [options.sort=this.sort] Sorting criteria for query will default to the this.sort value if not defined
  * @param {number} [options.limit=this.limit] Limits the total returned documents for query will default to the this.limit value if not defined
  * @param {Object|string} [options.population=this.population] The mongoose population for query will default to the this.population value if not defined
  * @param {Object} [options.fields=this.fields] The fields that should be returned in query will default to the this.fields value if not defined
  * @param {number} [options.skip] The number of documents to offset in query
- * @param  {Function} cb      Callback function for search
+ * @param  {Function} cb      Callback function for query
  */
-const _SEARCH = function (options, cb) {
+const _QUERY = function (options, cb) {
 	try {
 		let Model = options.model || this.model;
 		//Iteratively checks if value was passed in options argument and conditionally assigns the default value if not passed in options
@@ -41,6 +42,7 @@ const _SEARCH = function (options, cb) {
 /**
  * Convenience method for returning a stream of mongo data
  * @param  {Object}   options Options for the mongo query
+ * @param {Object} [options.query={}] The query that should be used for the database search
  * @param {Object} [options.model=this.model] The mongoose model for query will default to the this.model value if not defined
  * @param {string} [options.sort=this.sort] Sorting criteria for query will default to the this.sort value if not defined
  * @param {number} [options.limit=this.limit] Limits the total returned documents for query will default to the this.limit value if not defined
@@ -73,6 +75,7 @@ const _STREAM = function (options, cb) {
 /**
  * Convenience method for .find mongo method with built in pagination of data
  * @param  {Object}   options Options for the mongo query
+ * @param {Object} [options.query={}] The query that should be used for the database search
  * @param {Object} [options.model=this.model] The mongoose model for query will default to the this.model value if not defined
  * @param {string} [options.sort=this.sort] Sorting criteria for query will default to the this.sort value if not defined
  * @param {number} [options.limit=this.limit] Limits the total returned documents for query will default to the this.limit value if not defined
@@ -80,9 +83,9 @@ const _STREAM = function (options, cb) {
  * @param {Object|string} [options.population=this.population] The mongoose population for query will default to the this.population value if not defined
  * @param {Object} [options.fields=this.fields] The fields that should be returned in query will default to the this.fields value if not defined
  * @param {number} [options.skip] The number of documents to offset in query
- * @param  {Function} cb      Callback function for search
+ * @param  {Function} cb      Callback function for query
  */
-const _SEARCH_WITH_PAGINATION = function (options, cb) {
+const _QUERY_WITH_PAGINATION = function (options, cb) {
 	try {
 		let Model = options.model || this.model;
 		//Iteratively checks if value was passed in options argument and conditionally assigns the default value if not passed in options
@@ -95,7 +98,7 @@ const _SEARCH_WITH_PAGINATION = function (options, cb) {
 		let index = 0;
 		Promisie.doWhilst(() => {
 			return new Promisie((resolve, reject) => {
-				_SEARCH.call(this, { sort, limit: pagelength, fields, skip, population, model: Model }, (err, data) => {
+				_QUERY.call(this, { sort, limit: pagelength, fields, skip, population, model: Model }, (err, data) => {
 					if (err) reject(err);
 					else {
 						skip += data.length;
@@ -111,6 +114,63 @@ const _SEARCH_WITH_PAGINATION = function (options, cb) {
 		}, current => (current === pagelength && total < limit))
 			.then(() => cb(null, pages))
 			.catch(cb);
+	}
+	catch (e) {
+		cb(e);
+	}
+};
+
+/**
+ * Convenience method for .find mongo method with built in query builder functionality
+ * @param  {Object}   options Options for the mongo query
+ * @param {Object|string} [options.query] The query that should be used for the database search. If this value is a string it will be treated as a delimited list of values to use in query
+ * @param {Object} [options.model=this.model] The mongoose model for query will default to the this.model value if not defined
+ * @param {string} [options.sort=this.sort] Sorting criteria for query will default to the this.sort value if not defined
+ * @param {number} [options.limit=this.limit] Limits the total returned documents for query will default to the this.limit value if not defined
+ * @param {number} [options.pagelength=this.pagelength] Defines the max length of each sub-set of data
+ * @param {Object|string} [options.population=this.population] The mongoose population for query will default to the this.population value if not defined
+ * @param {Object} [options.fields=this.fields] The fields that should be returned in query will default to the this.fields value if not defined
+ * @param {number} [options.skip] The number of documents to offset in query
+ * @param {string[]} [options.search=this.search] Used in building the query. A separate $or statement is appended into query array for each search field specified ie. ['a','b'] => { $or: [{a: ..., b ...}] }
+ * @param {string} [options.delimeter="|||"] The value that the query values are delimeted by. If options.query is an object this value is ignored
+ * @param {string} [options.docid=this.docid] When using options.values this specifies the name of the field that should be matched
+ * @param {string} [options.values] A comma separated list of values to be queried against docid or "_id" if docid is not specified
+ * @param {Boolean} options.paginate If true documents will be returned in a paginated format
+ * @param  {Function} cb      Callback function for query
+ */
+const _SEARCH = function (options, cb) {
+	try {
+		let query;
+		let searchfields = (Array.isArray(options.search) || Array.isArray(this.search)) ? (options.search || this.search) : [(typeof options.docid === 'string') ? options.docid : '_id'];
+		let toplevel = (options.inclusive) ? '$or' : '$and';
+		query = { [toplevel]: [] };
+		//Pushes options.query if it already a composed query object
+		if (options.query && typeof options.query === 'object') query[toplevel].push(options.query);
+		//Handles options.query if string or number
+		else if (typeof options.query === 'string' || typeof options.query === 'number') {
+			let values = [];
+			if (typeof options.query === 'number') values.push(options.query);
+			//Tries to split on delimeter and generate query from options.query string
+			else values = options.query.split((typeof options.delimeter === 'string' || options.delimeter instanceof RegExp) ? options.delimeter : '|||');
+			let statement = values.reduce((result, value) => {
+				let block = { $or: [] };
+				for (let i = 0; i < searchfields.length; i++) {
+					block.$or.push({ [searchfields[i]]: value });
+				}
+				return result.concat(block);
+			}, []);
+			query.push({ $or: statement });
+		}
+		//Handles docnamelookup portion of query
+		if (typeof options.values === 'string') {
+			let split = values.split(',');
+			let isObjectIds = (split.filter(utility.isObjectId).length === split.length);
+			if (isObjectIds) query.push({ '_id': { $in: split } });
+			else query.push({ [(options.docid || this.docid) ? (options.docid || this.docid) : '_id']: { $in: split } });
+		}
+		options.query = query;
+		if (options.paginate) _QUERY_WITH_PAGINATION.call(this, options, cb);
+		else _QUERY.call(this, options, cb);
 	}
 	catch (e) {
 		cb(e);
@@ -336,9 +396,9 @@ const MONGO_ADAPTER = class Mongo_Adapter {
 	 * @param  {Object} [options={}] Configurable options for the mongo adapter
 	 * @param {string} options.docid Specifies the field which should be queried by default for .load
 	 * @param {Object} options.model Mongoose model that should be used in CRUD operations by default
-	 * @param {Object|string} [options.sort="-createdat"] Specifies default sort logic for .search queries
-	 * @param {number} [options.limit=500] Specifies a default limit to the total documents returned in a .search query
-	 * @param {number} [options.offset=0] Specifies a default amount of documents to skip in a .search query
+	 * @param {Object|string} [options.sort="-createdat"] Specifies default sort logic for .query and .search queries
+	 * @param {number} [options.limit=500] Specifies a default limit to the total documents returned in a .query and .search queries
+	 * @param {number} [options.offset=0] Specifies a default amount of documents to skip in a .query and .search queries
 	 * @param {Object|string} [options.population] Optional population configuration for documents returned in .load and .search queries
 	 * @param {Object} [options.fields] Optional configuration for limiting fields that are returned in .load and .search queries
 	 * @param {number} [options.pagelength=15] Specifies max number of documents that should appear in each sub-set for pagination
@@ -352,6 +412,7 @@ const MONGO_ADAPTER = class Mongo_Adapter {
 		this.sort = options.sort || '-createdat';
 		this.limit = options.limit || 500;
 		this.offset = options.offset || 0;
+		this.search = (Array.isArray(options.search)) ? options.search : [];
 		this.population = options.population;
 		this.fields = options.fields;
 		this.pagelength = options.pagelength || 15;
@@ -362,14 +423,25 @@ const MONGO_ADAPTER = class Mongo_Adapter {
 		this._useCache = (options.useCache && options.cache) ? true : false;
 	}
 	/**
-	 * Search method for adapter see _SEARCH and _SEARCH_WITH_PAGINATION for more details
-	 * @param  {Object}  [options={}] Configurable options for search
-	 * @param {Boolean} options.paginate When true search will return data in a paginated form
+	 * Query method for adapter see _QUERY and _QUERY_WITH_PAGINATION for more details
+	 * @param  {Object}  [options={}] Configurable options for query
+	 * @param {Boolean} options.paginate When true query will return data in a paginated form
+	 * @param  {Function} [cb=false]     Callback argument. When cb is not passed function returns a Promise
+	 * @return {Object}          Returns a Promise when cb argument is not passed
+	 */
+	query (options = {}, cb = false) {
+		let _query = (options && options.paginate) ? _QUERY_WITH_PAGINATION.bind(this) : _QUERY.bind(this);
+		if (typeof cb === 'function') _query(options, cb);
+		else return Promisie.promisify(_query)(options);
+	}
+	/**
+	 * Search method for adapter see _SEARCH for more details
+	 * @param  {Object}  [options={}] Configurable options for query
 	 * @param  {Function} [cb=false]     Callback argument. When cb is not passed function returns a Promise
 	 * @return {Object}          Returns a Promise when cb argument is not passed
 	 */
 	search (options = {}, cb = false) {
-		let _search = (options && options.paginate) ? _SEARCH_WITH_PAGINATION.bind(this) : _SEARCH.bind(this);
+		let _search = _SEARCH.bind(this);
 		if (typeof cb === 'function') _search(options, cb);
 		else return Promisie.promisify(_search)(options);
 	}

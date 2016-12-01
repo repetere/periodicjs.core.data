@@ -25,10 +25,10 @@ const DB_ADAPTER_INTERFACE = class DB_ADAPTER_INTERFACE {
 	create (options = {}) {
 		let Adapter = (typeof options.adapter === 'string') ? ADPATERS[options.adapter] : options.adapter;
 		if (!Adapter) throw new Error('Could not find a corresponding adapter - for custom adapters pass the constructor as the "adapater" options');
-		let adapater = new Adapter(options);
+		let adapter = new Adapter(options);
 		let errors = [];
-		for (let key in adapater) {
-			if (typeof adapater[key] !== this[key]) errors.push(`${ key } is invalid type ${ typeof adapater[key] } and should be ${ this[key] }`);
+		for (let key in adapter) {
+			if (typeof adapter[key] !== this[key]) errors.push(`${ key } is invalid type ${ typeof adapter[key] } and should be ${ this[key] }`);
 		}
 		if (errors.length) {
 			let compiledErrors = errors.reduce((result, error, index) => {
@@ -43,9 +43,10 @@ const DB_ADAPTER_INTERFACE = class DB_ADAPTER_INTERFACE {
 
 module.exports = new DB_ADAPTER_INTERFACE({
 	load: 'function',
+	query: 'function',
 	search: 'function',
 	update: 'function',
 	delete: 'function',
 	create: 'function',
-	stream: 'function'
+	stream: 'function',
 });
