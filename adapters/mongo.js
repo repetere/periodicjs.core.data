@@ -1,5 +1,6 @@
 'use strict';
 const path = require('path');
+const mongoose = require('mongoose');
 const Promisie = require('promisie');
 const xss = require('xss');
 const flatten = require('flat');
@@ -347,7 +348,7 @@ const MONGO_ADAPTER = class Mongo_Adapter {
 	 */
 	constructor (options = {}) {
 		this.docid = options.docid;
-		this.model = options.model;
+		this.model = (typeof options.model === 'string') ? mongoose.model(options.model) : options.model;
 		this.sort = options.sort || '-createdat';
 		this.limit = options.limit || 500;
 		this.offset = options.offset || 0;
