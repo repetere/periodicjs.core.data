@@ -7,7 +7,7 @@ const mongoose = require('mongoose');
  * @return {Object}      Returns a fully depopulated mongoose document
  */
 module.exports = function depopulate (data) {
-	let depopulated = {};
+	let depopulated = (Array.isArray(data)) ? [] : {};
 	for (let key in data) {
 		if (data[key] && typeof data[key] === 'object') {
 			if (data[key]._id && mongoose.Types.ObjectId.isValid(data[key]._id.toString())) depopulated[key] = data[key]._id.toString();

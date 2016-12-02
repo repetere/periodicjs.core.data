@@ -1,6 +1,5 @@
 'use strict';
 const path = require('path');
-const Promisie = require('promisie');
 const chai = require('chai');
 const expect = chai.expect;
 const AdapterInterface = require(path.join(__dirname, '../index'));
