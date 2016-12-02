@@ -131,7 +131,7 @@ const _QUERY_WITH_PAGINATION = function (options, cb) {
  * @param {Object|string} [options.population=this.population] The mongoose population for query will default to the this.population value if not defined
  * @param {Object} [options.fields=this.fields] The fields that should be returned in query will default to the this.fields value if not defined
  * @param {number} [options.skip] The number of documents to offset in query
- * @param {string[]} [options.search=this.search] Used in building the query. A separate $or statement is appended into query array for each search field specified ie. ['a','b'] => { $or: [{a: ..., b ...}] }
+ * @param {string[]} [options.search=this.searchfields] Used in building the query. A separate $or statement is appended into query array for each search field specified ie. ['a','b'] => { $or: [{a: ..., b ...}] }
  * @param {string} [options.delimeter="|||"] The value that the query values are delimeted by. If options.query is an object this value is ignored
  * @param {string} [options.docid=this.docid] When using options.values this specifies the name of the field that should be matched
  * @param {string} [options.values] A comma separated list of values to be queried against docid or "_id" if docid is not specified
@@ -141,7 +141,7 @@ const _QUERY_WITH_PAGINATION = function (options, cb) {
 const _SEARCH = function (options, cb) {
 	try {
 		let query;
-		let searchfields = (Array.isArray(options.search) || Array.isArray(this.search)) ? (options.search || this.search) : [(typeof options.docid === 'string') ? options.docid : '_id'];
+		let searchfields = (Array.isArray(options.search) || Array.isArray(this.searchfields)) ? (options.search || this.searchfields) : [(typeof options.docid === 'string') ? options.docid : '_id'];
 		let toplevel = (options.inclusive) ? '$or' : '$and';
 		query = { [toplevel]: [] };
 		//Pushes options.query if it already a composed query object
@@ -412,7 +412,7 @@ const MONGO_ADAPTER = class Mongo_Adapter {
 		this.sort = options.sort || '-createdat';
 		this.limit = options.limit || 500;
 		this.offset = options.offset || 0;
-		this.search = (Array.isArray(options.search)) ? options.search : [];
+		this.searchfields = (Array.isArray(options.search)) ? options.search : [];
 		this.population = options.population;
 		this.fields = options.fields;
 		this.pagelength = options.pagelength || 15;
