@@ -35,8 +35,10 @@ const CHANGESET = new mongoose.Schema({
  * @return {Object}                       Returns a mongo adapter with changeset as its model property
  */
 module.exports = (function (Mongo_Adapter) {
+  let ChangeSet = mongoose.model('Changeset', CHANGESET);
 	let Changes = new Mongo_Adapter({
-		model: CHANGESET
+		model: ChangeSet,
+    track_changes: false
 	});
 	return { Changes };
 })(require(path.join(__dirname, '../adapters/mongo')));

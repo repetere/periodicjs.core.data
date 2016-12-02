@@ -10,7 +10,8 @@ module.exports = function depopulate (data) {
 	let depopulated = (Array.isArray(data)) ? [] : {};
 	for (let key in data) {
 		if (data[key] && typeof data[key] === 'object') {
-			if (data[key]._id && mongoose.Types.ObjectId.isValid(data[key]._id.toString())) depopulated[key] = data[key]._id.toString();
+			if (data[key] instanceof Date) depopulated[key] = data[key];
+			else if (data[key]._id && mongoose.Types.ObjectId.isValid(data[key]._id.toString())) depopulated[key] = data[key]._id.toString();
 			else depopulated[key] = depopulate(data[key]);
 		}
 		else depopulated[key] = data[key];

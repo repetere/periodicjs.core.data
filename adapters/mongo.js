@@ -31,7 +31,7 @@ const _QUERY = function (options, cb) {
 			.sort(sort)
 			.skip(skip)
 			.limit(limit)
-			.populate(population)
+			.populate(population || '')
 			.exec(cb);
 	}
 	catch (e) {
@@ -59,11 +59,12 @@ const _STREAM = function (options, cb) {
 			result[key] = options[key] || this[key];
 			return result;
 		}, {});
+		skip = (typeof skip === 'number') ? skip : 0;
 		let stream = Model.find((options.query && typeof options.query === 'object') ? options.query : {}, fields)
 			.sort(sort)
 			.skip(skip)
 			.limit(limit)
-			.populate(population)
+			.populate(population || '')
 			.cursor();
 		cb(null, stream);
 	}
@@ -96,6 +97,7 @@ const _QUERY_WITH_PAGINATION = function (options, cb) {
 		let pages = {};
 		let total = 0;
 		let index = 0;
+		skip = (typeof skip === 'number') ? skip : 0;
 		Promisie.doWhilst(() => {
 			return new Promisie((resolve, reject) => {
 				_QUERY.call(this, { sort, limit: pagelength, fields, skip, population, model: Model }, (err, data) => {
@@ -141,7 +143,10 @@ const _QUERY_WITH_PAGINATION = function (options, cb) {
 const _SEARCH = function (options, cb) {
 	try {
 		let query;
-		let searchfields = (Array.isArray(options.search) || Array.isArray(this.searchfields)) ? (options.search || this.searchfields) : [(typeof options.docid === 'string') ? options.docid : '_id'];
+		let searchfields;
+		if (Array.isArray(options.search)) searchfields = options.search;
+		else if (typeof options.search === 'string') searchfields = options.search.split(',');
+		else searchfields = this.searchfields;
 		let toplevel = (options.inclusive) ? '$or' : '$and';
 		query = { [toplevel]: [] };
 		//Pushes options.query if it already a composed query object
@@ -159,14 +164,14 @@ const _SEARCH = function (options, cb) {
 				}
 				return result.concat(block);
 			}, []);
-			query.push({ $or: statement });
+			query[toplevel].push({ $or: statement });
 		}
 		//Handles docnamelookup portion of query
 		if (typeof options.values === 'string') {
-			let split = values.split(',');
+			let split = options.values.split(',');
 			let isObjectIds = (split.filter(utility.isObjectId).length === split.length);
-			if (isObjectIds) query.push({ '_id': { $in: split } });
-			else query.push({ [(options.docid || this.docid) ? (options.docid || this.docid) : '_id']: { $in: split } });
+			if (isObjectIds) query[toplevel].push({ '_id': { $in: split } });
+			else query[toplevel].push({ [(options.docid || this.docid) ? (options.docid || this.docid) : '_id']: { $in: split } });
 		}
 		options.query = query;
 		if (options.paginate) _QUERY_WITH_PAGINATION.call(this, options, cb);
@@ -201,7 +206,7 @@ const _LOAD = function (options, cb) {
 		};
 		Model.findOne(query, fields)
 			.sort(sort)
-			.populate(population)
+			.populate(population || '')
 			.exec(cb);
 	}
 	catch (e) {
@@ -224,7 +229,10 @@ const GENERATE_PATCH = function (data) {
 		if (Array.isArray(flattened[key])) $push[key] = { $each: flattened[key] };
 		else $set[key] = flattened[key];
 	}
-	return { $set, $push };
+	let compiled = {};
+	if (Object.keys($set).length) compiled.$set = $set;
+	if (Object.keys($push).length) compiled.$push = $push;
+	return compiled;
 };
 
 /**
@@ -256,12 +264,12 @@ const _UPDATE = function (options, cb) {
 		options.track_changes = (typeof options.track_changes === 'boolean') ? options.track_changes : this.track_changes;
 		let changesetData = {
 			update: Object.assign({}, options.updatedoc),
-			original: Object.assing({}, options.originalrevision)
+			original: Object.assign({}, options.originalrevision)
 		};
 		let generateChanges = (callback) => {
 			if (!options.track_changes || (options.track_changes && !options.ensure_changes)) callback();
 			if (options.track_changes) {
-				let changeset = utility.diff(changesetData.original, changesetData.update, depopulate);
+				let changeset = (!options.isPatch) ? utility.diff(changesetData.original, changesetData.update, depopulate) : options.updatedoc;
 				this.changeset.create({
 					parent_document: { id: options.id },
 					changes: changeset
@@ -398,7 +406,7 @@ const MONGO_ADAPTER = class Mongo_Adapter {
 	 * @param {Object} options.model Mongoose model that should be used in CRUD operations by default
 	 * @param {Object|string} [options.sort="-createdat"] Specifies default sort logic for .query and .search queries
 	 * @param {number} [options.limit=500] Specifies a default limit to the total documents returned in a .query and .search queries
-	 * @param {number} [options.offset=0] Specifies a default amount of documents to skip in a .query and .search queries
+	 * @param {number} [options.skip=0] Specifies a default amount of documents to skip in a .query and .search queries
 	 * @param {Object|string} [options.population] Optional population configuration for documents returned in .load and .search queries
 	 * @param {Object} [options.fields] Optional configuration for limiting fields that are returned in .load and .search queries
 	 * @param {number} [options.pagelength=15] Specifies max number of documents that should appear in each sub-set for pagination
@@ -411,13 +419,15 @@ const MONGO_ADAPTER = class Mongo_Adapter {
 		this.model = (typeof options.model === 'string') ? mongoose.model(options.model) : options.model;
 		this.sort = options.sort || '-createdat';
 		this.limit = options.limit || 500;
-		this.offset = options.offset || 0;
-		this.searchfields = (Array.isArray(options.search)) ? options.search : [];
+		this.skip = options.skip || 0;
+		if (Array.isArray(options.search)) this.searchfields = options.search;
+		else if (typeof options.search === 'string') this.searchfields = options.search.split(',');
+		else this.searchfields = [];
 		this.population = options.population;
 		this.fields = options.fields;
 		this.pagelength = options.pagelength || 15;
 		this.cache = options.cache;
-		this.track_changes = options.track_changes || true;
+		this.track_changes = (options.track_changes === false) ? false : true;
 		this.changeset = options.changeset || require(path.join(__dirname, '../changeset/index')).mongo;
 		this.xss_whitelist = options.xss_whitelist || xss_default_whitelist;
 		this._useCache = (options.useCache && options.cache) ? true : false;
