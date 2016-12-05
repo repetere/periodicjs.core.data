@@ -6,6 +6,9 @@
 Core data is the ORM wrapping component of periodicjs.core.controller that provides database adapters for commonly used databases (ie. mongo, sql, postgres). Adapters provide a standard set of methods and options regardless of the type of database and so the methods for querying, updating, creating etc. that are exposed across your application always expect the same inputs and provide the same outputs.
 
 Standardization of usage makes implementation easier and allows for more confidence in development.  Additionally, core data implements a basic interface for instantiating adapters and so all custom adapters are guaranteed to operate under the same basic guidelines.
+
+### [Full Documentation](https://github.com/typesettin/periodicjs.core.data/blob/master/doc/api.md)
+
 ### Usage (basic)
 ```javascript
 //Basic usage (mongodb)
@@ -95,7 +98,7 @@ $ grunt doc
 $ jsdoc2md adapters/**/*.js defaults/**/*.js index.js > doc/api.md
 ```
 ### Notes
-* Check out [https://github.com/typesettin/periodicjs.core.data](https://github.com/typesettin/periodicjs.core.data) for the full Periodic Documentation
+* Check out [https://github.com/typesettin/periodicjs](https://github.com/typesettin/periodicjs) for the full Periodic Documentation
 
 ### Testing
 ```sh
