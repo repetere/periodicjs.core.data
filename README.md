@@ -1,6 +1,7 @@
 # periodicjs.core.data
-### Version
-0.0.1
+[![Build Status](https://travis-ci.org/typesettin/periodicjs.core.data.svg?branch=master)](https://travis-ci.org/typesettin/periodicjs.core.data) [![NPM version](https://badge.fury.io/js/periodicjs.core.data.svg)](http://badge.fury.io/js/periodicjs.core.data) [![Downloads Per Month](https://img.shields.io/npm/dm/periodicjs.core.data.svg?maxAge=2592000)](https://www.npmjs.com/package/periodicjs.core.data) [![npm](https://img.shields.io/npm/dt/periodicjs.core.data.svg?maxAge=2592000)]() [![Join the chat at https://gitter.im/typesettin/periodicjs.core.data](https://badges.gitter.im/typesettin/periodicjs.core.data.svg)](https://gitter.im/typesettin/periodicjs.core.data?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
+
 ### Description
 Core data is the ORM wrapping component of periodicjs.core.controller that provides database adapters for commonly used databases (ie. mongo, sql, postgres). Adapters provide a standard set of methods and options regardless of the type of database and so the methods for querying, updating, creating etc. that are exposed across your application always expect the same inputs and provide the same outputs.
 
@@ -81,6 +82,20 @@ mongoose.once('open', () => {
     //Custom adapters must implement .search, .load, .query, .update, .delete, .stream and .create methods
 });
 ```
+
+### Development
+*Make sure you have grunt installed*
+```
+$ npm install -g grunt-cli jsdoc-to-markdown
+```
+
+For generating documentation
+```
+$ grunt doc
+$ jsdoc2md adapters/**/*.js defaults/**/*.js index.js > doc/api.md
+```
+### Notes
+* Check out [https://github.com/typesettin/periodicjs.core.data](https://github.com/typesettin/periodicjs.core.data) for the full Periodic Documentation
 
 ### Testing
 ```sh

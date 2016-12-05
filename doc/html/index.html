@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Home</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Home</h1>
+
+    
+
+
+
+    
+
+
+    <h3> </h3>
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+    <section>
+        <article><h1>periodicjs.core.data</h1><p><a href="https://travis-ci.org/typesettin/periodicjs.core.data"><img src="https://travis-ci.org/typesettin/periodicjs.core.data.svg?branch=master" alt="Build Status"></a> <a href="http://badge.fury.io/js/periodicjs.core.data"><img src="https://badge.fury.io/js/periodicjs.core.data.svg" alt="NPM version"></a> <a href="https://www.npmjs.com/package/periodicjs.core.data"><img src="https://img.shields.io/npm/dm/periodicjs.core.data.svg?maxAge=2592000" alt="Downloads Per Month"></a> <a href=""><img src="https://img.shields.io/npm/dt/periodicjs.core.data.svg?maxAge=2592000" alt="npm"></a> <a href="https://gitter.im/typesettin/periodicjs.core.data?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://badges.gitter.im/typesettin/periodicjs.core.data.svg" alt="Join the chat at https://gitter.im/typesettin/periodicjs.core.data"></a></p>
+<h3>Description</h3><p>Core data is the ORM wrapping component of periodicjs.core.controller that provides database adapters for commonly used databases (ie. mongo, sql, postgres). Adapters provide a standard set of methods and options regardless of the type of database and so the methods for querying, updating, creating etc. that are exposed across your application always expect the same inputs and provide the same outputs.</p>
+<p>Standardization of usage makes implementation easier and allows for more confidence in development.  Additionally, core data implements a basic interface for instantiating adapters and so all custom adapters are guaranteed to operate under the same basic guidelines.</p>
+<h3>Usage (basic)</h3><pre class="prettyprint source lang-javascript"><code>//Basic usage (mongodb)
+const mongoose = require('mongoose');
+mongoose.connect();
+const AdapterInterface = require('periodicjs.core.data');
+const ExampleSchema = require('./some/path/to/schema');
+let ExampleModel = mongoose.model('Example', ExampleSchema);
+let Adapter = AdapterIterface.create({ adapter: 'mongo', model: ExampleModel }); //example core datum for the Example mongoose schema
+let exampleDocument = { //example mongo document
+    title:'example document',
+    createdat: new Date(),
+};
+mongoose.once('open', () => {
+    // The model property in above example can also be set to the name of the registered model. 
+    // See documentation for full list of options for .create method
+    Adapter.create({ newdoc: exampleDocument })
+
+    //Adapters also have a stream method which resolves with a stream of query data
+    let writeStream = require('fs').createWriteStream('./some/path/to/file');
+    Adapter.stream({...})
+        .then(dbstream => {
+            dbstream.pipe(writeStream);
+        });
+});</code></pre><h3>Usage (with configuration Options)</h3><pre class="prettyprint source lang-javascript"><code>const mongoose = require('mongoose');
+mongoose.connect();
+const AdapterInterface = require('periodicjs.core.data');
+const ExampleSchema = require('./some/path/to/schema');
+let ExampleModel = mongoose.model('Example', ExampleSchema);
+let config = { limit: 500, sort: '-createdat'};
+let Adapter = AdapterIterface.create(Object.assign({ adapter: 'mongo', model: ExampleModel }, config)); //example core datum for the Example mongoose schema
+let exampleDocument = { //example mongo document
+    title:'example document',
+    createdat: new Date(),
+};
+mongoose.once('open', () => {
+    //All adapter methods optionally accept a callback argument
+    Adapter.load({title:'example'}, function (err, data) {
+        //Provide some error first callback function
+    });
+
+});</code></pre><h3>Usage (with custom adapter)</h3><pre class="prettyprint source lang-javascript"><code>const mongoose = require('mongoose');
+mongoose.connect();
+const AdapterInterface = require('periodicjs.core.data');
+const ExampleSchema = require('./some/path/to/schema');
+let ExampleModel = mongoose.model('Example', ExampleSchema);
+let config = { limit: 500, sort: '-createdat'};
+let Adapter = AdapterIterface.create(Object.assign({ adapter: 'mongo', model: ExampleModel }, config)); //example core datum for the Example mongoose schema
+let exampleDocument = { //example mongo document
+    title:'example document',
+    createdat: new Date(),
+};
+mongoose.once('open', () => {
+    //Implementing a custom adapter
+    const CustomAdapter = function () {
+        this.search = function () {};
+        this.load   = function () {};
+        this.query  = function () {};
+        this.update = function () {};
+        this.delete = function () {};
+        this.stream = function () {};
+        this.create = function () {};
+        return this;
+    };
+    const Adapter = AdapterInterface.create({ adapter: CustomAdapter, model: ExampleModel });
+    //Custom adapters must implement .search, .load, .query, .update, .delete, .stream and .create methods
+});</code></pre><h3>Development</h3><p><em>Make sure you have grunt installed</em></p>
+<pre class="prettyprint source"><code>$ npm install -g grunt-cli</code></pre><p>For generating documentation</p>
+<pre class="prettyprint source"><code>$ grunt doc
+$ jsdoc2md adapters/**/*.js defaults/**/*.js index.js > doc/api.md</code></pre><h3>Notes</h3><ul>
+<li>Check out <a href="https://github.com/typesettin/periodicjs.core.data">https://github.com/typesettin/periodicjs.core.data</a> for the full Periodic Documentation</li>
+</ul>
+<h3>Testing</h3><pre class="prettyprint source lang-sh"><code>$ npm test</code></pre><h3>Contributing</h3><h2>License</h2><p>MIT</p></article>
+    </section>
+
+
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="DB_ADAPTER_INTERFACE.html">DB_ADAPTER_INTERFACE</a></li><li><a href="MONGO_ADAPTER.html">MONGO_ADAPTER</a></li><li><a href="Mongo_Adapter_.html">Mongo_Adapter</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_CREATE">_CREATE</a></li><li><a href="global.html#_DELETE">_DELETE</a></li><li><a href="global.html#_DELETED">_DELETED</a></li><li><a href="global.html#_LOAD">_LOAD</a></li><li><a href="global.html#_QUERY">_QUERY</a></li><li><a href="global.html#_QUERY_WITH_PAGINATION">_QUERY_WITH_PAGINATION</a></li><li><a href="global.html#_SEARCH">_SEARCH</a></li><li><a href="global.html#_STREAM">_STREAM</a></li><li><a href="global.html#_UPDATE">_UPDATE</a></li><li><a href="global.html#_UPDATED">_UPDATED</a></li><li><a href="global.html#GENERATE_PATCH">GENERATE_PATCH</a></li><li><a href="global.html#GENERATE_PUT">GENERATE_PUT</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Mon Dec 05 2016 16:52:33 GMT-0500 (EST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
