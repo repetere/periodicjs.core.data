@@ -8,7 +8,7 @@
 
 const path = require('path');
 const fs = require('fs-extra');
-let testPaths = 'text/**/*.js';
+let testPaths = 'test/**/*.js';
 
 module.exports = function (grunt) {
   grunt.initConfig({
