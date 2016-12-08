@@ -1,7 +1,7 @@
 'use strict';
 const path = require('path');
 
-const ADPATERS = require(path.join(__dirname, './adapters/index'));
+const ADAPTERS = require(path.join(__dirname, './adapters/index'));
 
 /**
  * Interface class - defines properties and property types that should exist within constructed classes
@@ -24,7 +24,7 @@ const DB_ADAPTER_INTERFACE = class Adapter_Interface {
    * @return {Object}         Returns an instantiated adapter class
    */
   create (options = {}) {
-    let Adapter = (typeof options.adapter === 'string') ? ADPATERS[options.adapter] : options.adapter;
+    let Adapter = (typeof options.adapter === 'string') ? ADAPTERS[options.adapter] : options.adapter;
     if (!Adapter) throw new Error('Could not find a corresponding adapter - for custom adapters pass the constructor as the "adapter" options');
     let adapter = new Adapter(options);
     let errors = [];
