@@ -94,7 +94,10 @@ const _QUERY_WITH_PAGINATION = function (options, cb) {
       result[key] = options[key] || this[key];
       return result;
     }, {});
-    let pages = {};
+    let pages = {
+    	total: 0,
+    	total_pages: 0
+    };
     let total = 0;
     let index = 0;
     skip = (typeof skip === 'number') ? skip : 0;
@@ -105,9 +108,11 @@ const _QUERY_WITH_PAGINATION = function (options, cb) {
           else {
             skip += data.length;
             total += data.length;
+            pages.total += data.length;
+            pages.total_pages++;
             pages[index++] = {
               documents: data,
-              count: data.length
+              count: data.length,
             };
             resolve(data.length);
           }
