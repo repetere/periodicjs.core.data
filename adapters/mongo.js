@@ -103,7 +103,7 @@ const _QUERY_WITH_PAGINATION = function (options, cb) {
     skip = (typeof skip === 'number') ? skip : 0;
     Promisie.doWhilst(() => {
       return new Promisie((resolve, reject) => {
-        _QUERY.call(this, { sort, limit: pagelength, fields, skip, population, model: Model }, (err, data) => {
+        _QUERY.call(this, { sort, limit: (total + pagelength <= limit) ? pagelength : (limit - total), fields, skip, population, model: Model }, (err, data) => {
           if (err) reject(err);
           else {
             skip += data.length;
