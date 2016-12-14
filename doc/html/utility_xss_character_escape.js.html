@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Class: Mongo_Adapter</title>
+    <title>JSDoc: Source: utility/xss_character_escape.js</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,129 +17,37 @@
 
 <div id="main">
 
-    <h1 class="page-title">Class: Mongo_Adapter</h1>
+    <h1 class="page-title">Source: utility/xss_character_escape.js</h1>
 
     
 
 
 
-
-<section>
-
-<header>
     
-        <h2>Mongo_Adapter</h2>
-        
-    
-</header>
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>'use strict';
+const xss = require('xss');
+const xssRegexp = /(&lt;([^>]+)>)/ig;
 
-<article>
-    <div class="container-overview">
-    
-        
-
-    
-
-    <h4 class="name" id="Mongo_Adapter"><span class="type-signature"></span>new Mongo_Adapter<span class="signature">()</span><span class="type-signature"></span></h4>
-
-    
-
-
-
-<div class="description">
-    <p>An mongoose specific adapter which provides CRUD methods for a given model</p>
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="adapters_mongo.js.html">adapters/mongo.js</a>, <a href="adapters_mongo.js.html#line402">line 402</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-    </div>
-
-    
-
-    
-
-    
-
-     
-
-    
-
-    
-
-    
-
-    
-
-    
-</article>
-
-</section>
+/**
+ * Enforces XSS character escaping rules
+ * @param  {Object} doc           Data that is being escaped
+ * @param  {Object} configuration xss npm module configuration object
+ * @param  {Object} options       Configurable options for character escaping
+ * @param {Boolean} [options.html_xss] If true xss module is used for character escaping
+ * @param {Boolean} [options.skip_xss] If true character escaping is ignored
+ * @return {Object}               Returns either original document or object with xss character escaping rules applied
+ */
+module.exports = function enforceXSSRules (doc, configuration, options = {}) {
+	if (!options.skip_xss) {
+		if (configuration &amp;&amp; options.html_xss) return JSON.parse(xss(JSON.stringify(doc), configuration))
+		else return JSON.parse(JSON.stringify(doc).replace(xssRegexp, ''));
+	}
+	else return doc;
+};</code></pre>
+        </article>
+    </section>
 
 
 

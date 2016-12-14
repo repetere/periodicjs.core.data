@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Class: Mongo_Adapter</title>
+    <title>JSDoc: Source: utility/mongoid.js</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,129 +17,30 @@
 
 <div id="main">
 
-    <h1 class="page-title">Class: Mongo_Adapter</h1>
+    <h1 class="page-title">Source: utility/mongoid.js</h1>
 
     
 
 
 
-
-<section>
-
-<header>
     
-        <h2>Mongo_Adapter</h2>
-        
-    
-</header>
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>'use strict';
 
-<article>
-    <div class="container-overview">
-    
-        
-
-    
-
-    <h4 class="name" id="Mongo_Adapter"><span class="type-signature"></span>new Mongo_Adapter<span class="signature">()</span><span class="type-signature"></span></h4>
-
-    
-
-
-
-<div class="description">
-    <p>An mongoose specific adapter which provides CRUD methods for a given model</p>
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="adapters_mongo.js.html">adapters/mongo.js</a>, <a href="adapters_mongo.js.html#line402">line 402</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-    </div>
-
-    
-
-    
-
-    
-
-     
-
-    
-
-    
-
-    
-
-    
-
-    
-</article>
-
-</section>
+/**
+ * Determines if value is a valid mongo id
+ * @param  {*} value Any value to test
+ * @return {Boolean}       Returns true if value is a valid mongo id
+ */
+module.exports = function isObjectId (value) {
+	if (!value) return false;
+	value = (typeof value === 'string') ? value : value.toString();
+	if (value.length > 24) return false;
+	return /^[0-9a-fA-F]{24}$/.test(value);
+};</code></pre>
+        </article>
+    </section>
 
 
 

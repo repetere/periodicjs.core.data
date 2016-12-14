@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Class: Mongo_Adapter</title>
+    <title>JSDoc: Source: utility/diff.js</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,129 +17,48 @@
 
 <div id="main">
 
-    <h1 class="page-title">Class: Mongo_Adapter</h1>
+    <h1 class="page-title">Source: utility/diff.js</h1>
 
     
 
 
 
-
-<section>
-
-<header>
     
-        <h2>Mongo_Adapter</h2>
-        
-    
-</header>
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>'use strict';
+const jsondiff = require('jsondiffpatch').create({});
+const compare = jsondiff.diff.bind(jsondiff);
+const str2json = require('string-to-json');
+const depopulate = require('./depopulate');
+const moment = require('moment');
 
-<article>
-    <div class="container-overview">
-    
-        
-
-    
-
-    <h4 class="name" id="Mongo_Adapter"><span class="type-signature"></span>new Mongo_Adapter<span class="signature">()</span><span class="type-signature"></span></h4>
-
-    
-
-
-
-<div class="description">
-    <p>An mongoose specific adapter which provides CRUD methods for a given model</p>
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="adapters_mongo.js.html">adapters/mongo.js</a>, <a href="adapters_mongo.js.html#line402">line 402</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-    </div>
-
-    
-
-    
-
-    
-
-     
-
-    
-
-    
-
-    
-
-    
-
-    
-</article>
-
-</section>
+/**
+ * Removes reserved fields from objects and then does a comparison of values
+ * @param  {Object} original       The original unmodified object
+ * @param  {Object} revised        The updated object
+ * @param  {Boolean} skipDepopulate If true objects will not be depopulated before doing the object comparison
+ * @return {Object}                Returns the result of the object comparison
+ */
+module.exports = function objectdiff (original, revised, skipDepopulate) {
+	let reservedKeys = ['__v','_id','changes','random','createdat'];
+	let clones = {
+		original: Object.assign({}, original),
+		revised: Object.assign({}, revised)
+	};
+	for (let i = 0; i &lt; reservedKeys.length; i++) {
+		delete clones.original[reservedKeys[i]];
+		delete clones.revised[reservedKeys[i]];
+	}
+	if (!skipDepopulate) {
+		clones.original = depopulate(clones.original);
+		clones.revised = depopulate(clones.revised);
+	}
+	let delta = compare(clones.original, clones.revised);
+	return (delta) ? str2json.convert(delta) : {};
+};</code></pre>
+        </article>
+    </section>
 
 
 

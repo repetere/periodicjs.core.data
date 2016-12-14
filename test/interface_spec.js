@@ -32,6 +32,10 @@ describe('DB Adapter Interface', function () {
 			let adapter = AdapterInterface.create({ adapter: 'mongo' });
 			expect(adapter instanceof MongoAdapter).to.be.true;
 		});
+		it('Should return a constructed adapter when only .db is defined', () => {
+			let adapter = AdapterInterface.create({ db: 'mongo' });
+			expect(adapter instanceof MongoAdapter).to.be.true;
+		});
 	});
 	describe('generating an adapter from a provided constructor', function () {
 		it('Should throw an error if custom adapter class is missing required methods', done => {

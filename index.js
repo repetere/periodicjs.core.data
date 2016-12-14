@@ -21,9 +21,11 @@ const DB_ADAPTER_INTERFACE = class Adapter_Interface {
    * Constructs a new object with a prototype defined by the .adapter ensuring that instantiated class conforms to interface requirements
    * @param  {Object} [options={}] Values to be passed to class constructor (.adapter should be reserved for either customer class or string that matches key in ADAPTERS)
    * @param {string|Function} options.adapter Required to specify type of adapter to be constructed or a class constructor that can be instantiated with new keyword
+   * @param {string|Function} options.db Alias for options.adapter. If options.db is defined options.adapter will be ignored
    * @return {Object}         Returns an instantiated adapter class
    */
   create (options = {}) {
+  	options.adapter = (options.db) ? options.db : options.adapter;
     let Adapter = (typeof options.adapter === 'string') ? ADAPTERS[options.adapter] : options.adapter;
     if (!Adapter) throw new Error('Could not find a corresponding adapter - for custom adapters pass the constructor as the "adapter" options');
     let adapter = new Adapter(options);

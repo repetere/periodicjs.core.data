@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Class: Mongo_Adapter</title>
+    <title>JSDoc: Class: MONGO_ADAPTER</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
 
-    <h1 class="page-title">Class: Mongo_Adapter</h1>
+    <h1 class="page-title">Class: MONGO_ADAPTER</h1>
 
     
 
@@ -28,7 +28,7 @@
 
 <header>
     
-        <h2>Mongo_Adapter</h2>
+        <h2>MONGO_ADAPTER</h2>
         
     
 </header>
@@ -40,15 +40,12 @@
 
     
 
-    <h4 class="name" id="Mongo_Adapter"><span class="type-signature"></span>new Mongo_Adapter<span class="signature">()</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="MONGO_ADAPTER"><span class="type-signature"></span>new MONGO_ADAPTER<span class="signature">(options<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
 
     
 
 
 
-<div class="description">
-    <p>An mongoose specific adapter which provides CRUD methods for a given model</p>
-</div>
 
 
 
@@ -56,6 +53,525 @@
 
 
 
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    {}
+                
+                </td>
+            
+
+            <td class="description last"><p>Configurable options for the mongo adapter</p>
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>docid</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>Specifies the field which should be queried by default for .load</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>model</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>Mongoose model that should be used in CRUD operations by default</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>sort</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+|
+
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    "-createdat"
+                
+                </td>
+            
+
+            <td class="description last"><p>Specifies default sort logic for .query and .search queries</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>limit</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    500
+                
+                </td>
+            
+
+            <td class="description last"><p>Specifies a default limit to the total documents returned in a .query and .search queries</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>skip</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    0
+                
+                </td>
+            
+
+            <td class="description last"><p>Specifies a default amount of documents to skip in a .query and .search queries</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>population</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+|
+
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>Optional population configuration for documents returned in .load and .search queries</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>fields</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>Optional configuration for limiting fields that are returned in .load and .search queries</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>pagelength</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    15
+                
+                </td>
+            
+
+            <td class="description last"><p>Specifies max number of documents that should appear in each sub-set for pagination</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>track_changes</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Boolean</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    true
+                
+                </td>
+            
+
+            <td class="description last"><p>Sets default track changes behavior for udpates</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>changeset</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>Overwrites default changeset model should have a custom create method if using a custom schema</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>xss_whitelist</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Array.&lt;string></span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
+
+            <td class="description last"><p>Configuration for XSS whitelist package. If false XSS whitelisting will be ignored</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
+        </tr>
+
+    
+    </tbody>
+</table>
 
 
 
@@ -91,7 +607,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="adapters_mongo.js.html">adapters/mongo.js</a>, <a href="adapters_mongo.js.html#line397">line 397</a>
+        <a href="adapters_mongo.js.html">adapters/mongo.js</a>, <a href="adapters_mongo.js.html#line422">line 422</a>
     </li></ul></dd>
     
 
@@ -133,6 +649,1641 @@
     
 
     
+        <h3 class="subsection-title">Methods</h3>
+
+        
+            
+
+    
+
+    <h4 class="name" id="create"><span class="type-signature"></span>create<span class="signature">(options<span class="signature-attributes">opt</span>, cb<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Object}</span></h4>
+
+    
+
+
+
+<div class="description">
+    <p>Create method for adapter see _CREATE for more details</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    {}
+                
+                </td>
+            
+
+            <td class="description last"><p>Configurable options for create</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>cb</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
+
+            <td class="description last"><p>Callback argument. When cb is not passed function returns a Promise</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="adapters_mongo.js.html">adapters/mongo.js</a>, <a href="adapters_mongo.js.html#line503">line 503</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>Returns a Promise when cb argument is not passed</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Object</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="delete"><span class="type-signature"></span>delete<span class="signature">(options<span class="signature-attributes">opt</span>, cb<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Object}</span></h4>
+
+    
+
+
+
+<div class="description">
+    <p>Delete method for adapter see _DELETE and _DELETED for more details</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    {}
+                
+                </td>
+            
+
+            <td class="description last"><p>Configurable options for create</p>
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>return_deleted</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Boolean</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>If true delete method will return the deleted document</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>cb</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
+
+            <td class="description last"><p>Callback argument. When cb is not passed function returns a Promise</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="adapters_mongo.js.html">adapters/mongo.js</a>, <a href="adapters_mongo.js.html#line515">line 515</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>Returns a Promise when cb argument is not passed</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Object</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="load"><span class="type-signature"></span>load<span class="signature">(options<span class="signature-attributes">opt</span>, cb<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Object}</span></h4>
+
+    
+
+
+
+<div class="description">
+    <p>Load method for adapter see _LOAD for more details</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    {}
+                
+                </td>
+            
+
+            <td class="description last"><p>Configurable options for load</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>cb</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
+
+            <td class="description last"><p>Callback argument. When cb is not passed function returns a Promise</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="adapters_mongo.js.html">adapters/mongo.js</a>, <a href="adapters_mongo.js.html#line480">line 480</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>Returns a Promise when cb argument is not passed</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Object</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="query"><span class="type-signature"></span>query<span class="signature">(options<span class="signature-attributes">opt</span>, cb<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Object}</span></h4>
+
+    
+
+
+
+<div class="description">
+    <p>Query method for adapter see _QUERY and _QUERY_WITH_PAGINATION for more details</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    {}
+                
+                </td>
+            
+
+            <td class="description last"><p>Configurable options for query</p>
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>paginate</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Boolean</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>When true query will return data in a paginated form</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>cb</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
+
+            <td class="description last"><p>Callback argument. When cb is not passed function returns a Promise</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="adapters_mongo.js.html">adapters/mongo.js</a>, <a href="adapters_mongo.js.html#line447">line 447</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>Returns a Promise when cb argument is not passed</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Object</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="search"><span class="type-signature"></span>search<span class="signature">(options<span class="signature-attributes">opt</span>, cb<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Object}</span></h4>
+
+    
+
+
+
+<div class="description">
+    <p>Search method for adapter see _SEARCH for more details</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    {}
+                
+                </td>
+            
+
+            <td class="description last"><p>Configurable options for query</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>cb</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
+
+            <td class="description last"><p>Callback argument. When cb is not passed function returns a Promise</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="adapters_mongo.js.html">adapters/mongo.js</a>, <a href="adapters_mongo.js.html#line458">line 458</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>Returns a Promise when cb argument is not passed</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Object</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="stream"><span class="type-signature"></span>stream<span class="signature">(options<span class="signature-attributes">opt</span>, cb<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Object}</span></h4>
+
+    
+
+
+
+<div class="description">
+    <p>Stream method for adapter see _STREAM for more details</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    {}
+                
+                </td>
+            
+
+            <td class="description last"><p>Configurable options for stream</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>cb</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
+
+            <td class="description last"><p>Callback argument. When cb is not passed function returns a Promise</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="adapters_mongo.js.html">adapters/mongo.js</a>, <a href="adapters_mongo.js.html#line469">line 469</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>Returns a Promise when cb argument is not passed</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Object</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="update"><span class="type-signature"></span>update<span class="signature">(options<span class="signature-attributes">opt</span>, cb<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Object}</span></h4>
+
+    
+
+
+
+<div class="description">
+    <p>Update method for adapter see _UPDATE and _UPDATED for more details</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    {}
+                
+                </td>
+            
+
+            <td class="description last"><p>Configurable options for update</p>
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>return_updated</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Boolean</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>If true update method will return the updated document instead of an update status message</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>cb</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
+
+            <td class="description last"><p>Callback argument. When cb is not passed function returns a Promise</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="adapters_mongo.js.html">adapters/mongo.js</a>, <a href="adapters_mongo.js.html#line492">line 492</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>Returns a Promise when cb argument is not passed</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Object</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+    
 
     
 
@@ -147,13 +2298,13 @@
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="DB_ADAPTER_INTERFACE.html">DB_ADAPTER_INTERFACE</a></li><li><a href="MONGO_ADAPTER.html">MONGO_ADAPTER</a></li><li><a href="Mongo_Adapter_.html">Mongo_Adapter</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_CREATE">_CREATE</a></li><li><a href="global.html#_DELETE">_DELETE</a></li><li><a href="global.html#_DELETED">_DELETED</a></li><li><a href="global.html#_LOAD">_LOAD</a></li><li><a href="global.html#_QUERY">_QUERY</a></li><li><a href="global.html#_QUERY_WITH_PAGINATION">_QUERY_WITH_PAGINATION</a></li><li><a href="global.html#_SEARCH">_SEARCH</a></li><li><a href="global.html#_STREAM">_STREAM</a></li><li><a href="global.html#_UPDATE">_UPDATE</a></li><li><a href="global.html#_UPDATED">_UPDATED</a></li><li><a href="global.html#GENERATE_PATCH">GENERATE_PATCH</a></li><li><a href="global.html#GENERATE_PUT">GENERATE_PUT</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="DB_ADAPTER_INTERFACE.html">DB_ADAPTER_INTERFACE</a></li><li><a href="Mongo_Adapter.html">Mongo_Adapter</a></li><li><a href="MONGO_ADAPTER_.html">MONGO_ADAPTER</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_CREATE">_CREATE</a></li><li><a href="global.html#_DELETE">_DELETE</a></li><li><a href="global.html#_DELETED">_DELETED</a></li><li><a href="global.html#_LOAD">_LOAD</a></li><li><a href="global.html#_QUERY">_QUERY</a></li><li><a href="global.html#_QUERY_WITH_PAGINATION">_QUERY_WITH_PAGINATION</a></li><li><a href="global.html#_SEARCH">_SEARCH</a></li><li><a href="global.html#_STREAM">_STREAM</a></li><li><a href="global.html#_UPDATE">_UPDATE</a></li><li><a href="global.html#_UPDATED">_UPDATED</a></li><li><a href="global.html#GENERATE_PATCH">GENERATE_PATCH</a></li><li><a href="global.html#GENERATE_PUT">GENERATE_PUT</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Mon Dec 05 2016 16:52:34 GMT-0500 (EST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Wed Dec 14 2016 13:44:36 GMT-0500 (EST)
 </footer>
 
 <script> prettyPrint(); </script>

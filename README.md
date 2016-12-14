@@ -95,7 +95,7 @@ $ npm install -g grunt-cli jsdoc-to-markdown
 For generating documentation
 ```
 $ grunt doc
-$ jsdoc2md adapters/**/*.js defaults/**/*.js index.js > doc/api.md
+$ jsdoc2md adapters/**/*.js utility/**/*.js defaults/**/*.js index.js > doc/api.md
 ```
 ### Notes
 * Check out [https://github.com/typesettin/periodicjs](https://github.com/typesettin/periodicjs) for the full Periodic Documentation
