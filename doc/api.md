@@ -85,13 +85,13 @@ An mongoose specific adapter which provides CRUD methods for a given model
 | options.docid | <code>string</code> |  | Specifies the field which should be queried by default for .load |
 | options.model | <code>Object</code> |  | Mongoose model that should be used in CRUD operations by default |
 | [options.sort] | <code>Object</code> &#124; <code>string</code> | <code>&quot;-createdat&quot;</code> | Specifies default sort logic for .query and .search queries |
+| [options.db_connection] | <code>Object</code> | <code>mongoose</code> | A custom mongoose db instance if connecting to a different mongoose instance. Will default to cached mongoose connection if not passed. If this option is defined the changeset scheam will be registered on this instance. |
 | [options.limit] | <code>number</code> | <code>500</code> | Specifies a default limit to the total documents returned in a .query and .search queries |
 | [options.skip] | <code>number</code> | <code>0</code> | Specifies a default amount of documents to skip in a .query and .search queries |
 | [options.population] | <code>Object</code> &#124; <code>string</code> |  | Optional population configuration for documents returned in .load and .search queries |
 | [options.fields] | <code>Object</code> |  | Optional configuration for limiting fields that are returned in .load and .search queries |
 | [options.pagelength] | <code>number</code> | <code>15</code> | Specifies max number of documents that should appear in each sub-set for pagination |
 | [options.track_changes] | <code>Boolean</code> | <code>true</code> | Sets default track changes behavior for udpates |
-| [options.changeset] | <code>Object</code> |  | Overwrites default changeset model should have a custom create method if using a custom schema |
 | [options.xss_whitelist] | <code>Array.&lt;string&gt;</code> | <code>false</code> | Configuration for XSS whitelist package. If false XSS whitelisting will be ignored |
 
 <a name="MONGO_ADAPTER+query"></a>

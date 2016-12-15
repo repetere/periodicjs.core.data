@@ -9,10 +9,11 @@ const AdapterInterface = require(path.join(__dirname, '../../index'));
 const ExampleSchema = require(path.join(__dirname, '../examples/mongoose_model'));
 
 var Example;
+var db;
 var connectDB = function () {
 	return new Promisie((resolve, reject) => {
 		mongoose.connect('mongodb://localhost/test_core_data');
-		let db = mongoose.connection;
+		db = mongoose.connection;
 		db.on('error', reject)
 			.once('open', resolve);
 	});
@@ -47,6 +48,28 @@ describe('Mongo adapter testing', function () {
 		it('Should be able to set the adapter model with just the adapter name', () => {
 			let TestAdapter = AdapterInterface.create({ adapter: 'mongo', model: 'Example' });
 			expect(Adapter.model.modelName).to.equal('Example');
+		});
+	});
+	describe('Custom mongoose instance testing', () => {
+		let CustomInstanceAdapter;
+		before(() => {
+			CustomInstanceAdapter = AdapterInterface.create({ adapter: 'mongo', model: Example, db_connection: db });
+		});
+		let person = {
+			contact: {
+				first_name: 'ADistinctName',
+				last_name: 'World',
+				dob: moment('12/02/1990', 'MM/DD/YYYY').format()
+			}
+		};
+		it('Should be able to create a document when creating an adapter with a custom db connection', done => {
+			CustomInstanceAdapter.create({ newdoc: Object.assign({}, person), skip_xss: true })
+				.try(result => {
+					expect(result.contact.first_name).to.equal('ADistinctName');
+					expect(result._id).to.be.ok;
+					done();
+				})
+				.catch(done);
 		});
 	});
 	describe('Adapter .create method testing', () => {

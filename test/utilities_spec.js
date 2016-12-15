@@ -5,6 +5,8 @@ const xss_defaults = require(path.join(__dirname, '../defaults/xss_whitelist'));
 const chai = require('chai');
 const expect = chai.expect;
 const utility = require(path.join(__dirname, '../utility/index'));
+const MongoAdapter = require(path.join(__dirname, '../adapters/mongo'));
+const createChangeset = require(path.join(__dirname, '../changeset/mongo'));
 
 var generateObjectId = function () {
 	return mongoose.Types.ObjectId();
@@ -97,6 +99,12 @@ describe('Utility method testing', function () {
 			expect(escaped).to.not.deep.equal(example);
 			let escaped2 = utility.enforceXSSRules(Object.assign({}, example), false, { skip_xss: false, html_xss: true });
 			expect(escaped2).to.deep.equal(escaped);
+		});
+	});
+	describe('Mongo Changset on custom mongoose instance', function () {
+		it('Should register the Changeset schema and create an adapter', () => {
+			let adapter = createChangeset(mongoose);
+			expect(adapter instanceof MongoAdapter).to.be.true;
 		});
 	});
 });

@@ -1,7 +1,6 @@
 'use strict';
 const mongoose = require('mongoose');
 const path = require('path');
-const Mongo_Adapter = require(path.join(__dirname, '../adapters/mongo'));
 
 /**
  * Default changeset schema for mongo databases
@@ -32,20 +31,20 @@ const CHANGESET = new mongoose.Schema({
 });
 
 /**
- * Registers a changeset schema to a custom mongoose instance
- * @param  {Object} db_connection A mongoose connection where the changeset collection should be registered
- * @return {Object}               Returns an instance of a Mongo_Adapter that has been configured for the changeset collection
+ * Exports the changeset model as a singleton
+ * @return {Object}                       Returns a mongo adapter with changeset as its model property
  */
-module.exports = function register_changeset (db_connection) {
+module.exports = (function (Mongo_Adapter) {
   let ChangeSet;
   try {
-    ChangeSet = db_connection.model('Changeset', CHANGESET);
+    ChangeSet = mongoose.model('Changeset', CHANGESET);
   }
   catch (e) {
-    ChangeSet = db_connection.model('Changeset');
+    ChangeSet = mongoose.model('Changeset');
   }
-  return new Mongo_Adapter({
-    model: ChangeSet,
+	let Changes = new Mongo_Adapter({
+		model: ChangeSet,
     track_changes: false
-  });
-};
+	});
+	return { Changes };
+})(require(path.join(__dirname, '../../adapters/mongo')));
