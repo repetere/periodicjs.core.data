@@ -14,6 +14,10 @@ describe('Default value loaders testing', function () {
 			expect(whitelist).to.be.an('object');
 			expect(whitelist).to.have.property('onIgnoreTagAttr');
 			expect(whitelist).to.have.property('onTagAttr');
+			let ignoredTag = whitelist.onIgnoreTagAttr('script', 'data-example', '<script>alert("hello");</script>');
+			expect(/^data-example=".+"$/.test(ignoredTag)).to.be.true;
+			let onTag = whitelist.onTagAttr('audio', 'src', '<audio src="http://some.source"></audio>');
+			expect(/^src=".+"/.test(onTag)).to.be.true;
 		});
 	});
 });
