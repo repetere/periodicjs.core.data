@@ -13,7 +13,7 @@ const moment = require('moment');
  * @return {Object}                Returns the result of the object comparison
  */
 module.exports = function objectdiff (original, revised, skipDepopulate) {
-	let reservedKeys = ['__v','_id','changes','random','createdat'];
+	let reservedKeys = ['__v','_id','changes','random','createdat','id'];
 	let clones = {
 		original: Object.assign({}, original),
 		revised: Object.assign({}, revised)

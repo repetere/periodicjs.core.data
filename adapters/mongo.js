@@ -2,7 +2,6 @@
 const path = require('path');
 const mongoose = require('mongoose');
 const Promisie = require('promisie');
-const xss = require('xss');
 const flatten = require('flat');
 const utility = require(path.join(__dirname, '../utility/index'));
 const xss_default_whitelist = require(path.join(__dirname, '../defaults/index')).xss_whitelist();
@@ -271,13 +270,14 @@ const _UPDATE = function (options, cb) {
       update: Object.assign({}, options.updatedoc),
       original: Object.assign({}, options.originalrevision)
     };
+    let depopulate = (options.depopulate === false) ? false : true;
     let generateChanges = (callback) => {
       if (!options.track_changes || (options.track_changes && !options.ensure_changes)) callback();
       if (options.track_changes) {
         let changeset = (!options.isPatch) ? utility.diff(changesetData.original, changesetData.update, depopulate) : options.updatedoc;
         this.changeset.create({
           parent_document: { id: options.id },
-          changes: changeset
+          changeset: changeset
         }, (err, result) => {
           if (options.ensure_changes) {
             if (err) callback(err);
@@ -287,7 +287,6 @@ const _UPDATE = function (options, cb) {
       }
     };
     let usePatch = options.isPatch;
-    let depopulate = (options.depopulate === false) ? false : true;
     let xss_whitelist = (options.xss_whitelist) ? options.xss_whitelist : this.xss_whitelist;
     options.updatedoc = (depopulate) ? utility.depopulate(options.updatedoc) : options.updatedoc;
     options.updatedoc = utility.enforceXSSRules(options.updatedoc, xss_whitelist, options);
@@ -333,10 +332,36 @@ const _UPDATED = function (options, cb) {
 };
 
 /**
+ * Convenience method for .update with the multi options set to true for multiple document updates
+ * @param  {Object}   options Configurable options for mongo update with multi true
+ * @param {Object} [options.model=this.model] The mongoose model for query will default to the this.model value if not defined
+ * @param {Object} options.query Query that should be used in update
+ * @param {Object} [options.updatequery] Alias for options.query if options.query is set this option is ignored
+ * @param {Object} options.updateattributes A mongo update formatted object
+ * @param {Object} [options.updatedoc] Object specifying fields to update with new values this object will be formatted as a patch update. If options.updateattributes is set this option is ignored
+ * @param  {Function} cb      Call function for update all
+ */
+const _UPDATE_ALL = function (options, cb) {
+  try {
+    let Model = options.model || this.model;
+    let query = options.query || options.updatequery;
+    let patch;
+    if (options.updateattributes && typeof options.updateattributes === 'object') patch = options.updateattributes;
+    else if (options.updatedoc && typeof options.updatedoc === 'object') patch = GENERATE_PATCH(options.updatedoc);
+    else throw new Error('Either updateattributes or updatedoc option must be set in order to execute multi update');
+    Model.update(query, patch, { multi: true }, cb);
+  }
+  catch (e) {
+    cb(e);
+  }
+};
+
+/**
  * Convenience method for .create mongoose method
  * @param  {Object}   options Configurable options for mongo create
  * @param {Object} [options.model=this.model] The mongoose model for query will default to the this.model value if not defined
  * @param {Object} [options.newdoc=options] The document that should be created. If newdoc option is not passed it is assumed that the entire options object is the document
+ * @param {Boolean} options.bulk_create If true and options.newdoc is an array each index will be treated as an individual document and be bulk inserted
  * @param {Boolean} [options.skip_xss] If true xss character escaping will be skipped and xss whitelist is ignored
  * @param {Boolean} [options.html_xss] If true xss npm module will be used for character escaping
  * @param {Object}  [options.xss_whitelist=this.xss_whitelist] XSS white-list configuration for xss npm module
@@ -347,7 +372,14 @@ const _CREATE = function (options, cb) {
     let Model = options.model || this.model;
     let newdoc = options.newdoc || options;
     let xss_whitelist = (options.xss_whitelist) ? options.xss_whitelist : this.xss_whitelist;
-    Model.create(utility.enforceXSSRules(newdoc, xss_whitelist, (options.newdoc) ? options : undefined), cb);
+    if (Array.isArray(newdoc) && options.bulk_create) {
+      Promisie.map(newdoc, (doc) => {
+        return Promisie.promisify(Model.create, Model)(utility.enforceXSSRules(doc, xss_whitelist, options));
+      })
+        .then(created => cb(null, created))
+        .catch(cb);
+    }
+    else Model.create(utility.enforceXSSRules(newdoc, xss_whitelist, (options.newdoc) ? options : undefined), cb);
   }
   catch (e) {
     cb(e);
@@ -484,14 +516,15 @@ const MONGO_ADAPTER = class Mongo_Adapter {
     else return Promisie.promisify(_load)(options);
   }
   /**
-   * Update method for adapter see _UPDATE and _UPDATED for more details
+   * Update method for adapter see _UPDATE, _UPDATED and _UPDATE_ALL for more details
    * @param  {Object}  [options={}] Configurable options for update
    * @param {Boolean} options.return_updated If true update method will return the updated document instead of an update status message
+   * @param {Boolean} options.multi If true a multiple document update will be perfomed
    * @param  {Function} [cb=false]     Callback argument. When cb is not passed function returns a Promise
    * @return {Object}          Returns a Promise when cb argument is not passed
    */
   update (options = {}, cb = false) {
-    let _update = (options.return_updated) ? _UPDATED.bind(this) : _UPDATE.bind(this);
+    let _update = (options.multi) ? _UPDATE_ALL.bind(this) : ((options.return_updated) ? _UPDATED.bind(this) : _UPDATE.bind(this));
     if (typeof cb === 'function') _update(options, cb);
     else return Promisie.promisify(_update)(options);
   }
