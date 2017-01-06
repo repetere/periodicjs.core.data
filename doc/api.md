@@ -8,7 +8,7 @@
 <dd><p>A sequelize SQL specific adapter which provides CRUD methods for a given model</p>
 </dd>
 <dt><a href="#CURSOR">CURSOR</a> : <code>Cursor</code></dt>
-<dd><p>A simple cursor-like implementation that combines generator and stream functionality. Cursor exposes all the normal stream methods such as pipe, unpipe, on, once etc as well as an initialize method that returns a generator and allows for documents to be iteratively resolved. Using both the generator based cursor interface and stream interface concurrently is not recommended as both utilize the TransformStream on data, on error and on finish events and as will likely cause unpredictable behavior</p>
+<dd><p>A simple cursor-like implementation that combines generator and stream functionality. Cursor exposes all the normal stream methods such as pipe, unpipe, on, once etc as well as an initialize method that returns a generator and allows for documents to be iteratively resolved. Using both the generator based cursor interface and stream interface concurrently is not recommended as both utilize the TransformStream on data, on error and on finish events and as such will likely cause unpredictable behavior</p>
 </dd>
 <dt><a href="#DB_ADAPTER_INTERFACE">DB_ADAPTER_INTERFACE</a></dt>
 <dd><p>Interface class - defines properties and property types that should exist within constructed classes</p>
@@ -268,7 +268,7 @@ Constructor for SQL_Adapter
 | [options.sort] | <code>Object</code> &#124; <code>string</code> | <code>&quot;createdat DESC&quot;</code> | Specifies default sort logic for .query and .search queries |
 | [options.limit] | <code>number</code> | <code>500</code> | Specifies a default limit to the total documents returned in a .query and .search queries |
 | [options.skip] | <code>number</code> | <code>0</code> | Specifies a default amount of documents to skip in a .query and .search queries |
-| [options.population] | <code>Object</code> &#124; <code>string</code> |  | Optional population configuration for documents returned in .load and .search queries (see sequelize include for proper formatting) |
+| [options.population] | <code>Object</code> &#124; <code>Array.&lt;Object&gt;</code> |  | Optional population configuration for documents returned in .load and .search queries (see sequelize include for proper formatting) |
 | [options.fields] | <code>Object</code> |  | Optional configuration for limiting fields that are returned in .load and .search queries |
 | [options.pagelength] | <code>number</code> | <code>15</code> | Specifies max number of documents that should appear in each sub-set for pagination |
 | [options.track_changes] | <code>Boolean</code> | <code>true</code> | Sets default track changes behavior for udpates |
@@ -385,7 +385,7 @@ Raw query method for adapter see _RAW for more details
 <a name="CURSOR"></a>
 
 ## CURSOR : <code>Cursor</code>
-A simple cursor-like implementation that combines generator and stream functionality. Cursor exposes all the normal stream methods such as pipe, unpipe, on, once etc as well as an initialize method that returns a generator and allows for documents to be iteratively resolved. Using both the generator based cursor interface and stream interface concurrently is not recommended as both utilize the TransformStream on data, on error and on finish events and as will likely cause unpredictable behavior
+A simple cursor-like implementation that combines generator and stream functionality. Cursor exposes all the normal stream methods such as pipe, unpipe, on, once etc as well as an initialize method that returns a generator and allows for documents to be iteratively resolved. Using both the generator based cursor interface and stream interface concurrently is not recommended as both utilize the TransformStream on data, on error and on finish events and as such will likely cause unpredictable behavior
 
 **Kind**: global class  
 **Extends:** <code>TranformStream</code>  

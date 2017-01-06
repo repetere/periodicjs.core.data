@@ -21,7 +21,7 @@ var defaultError = function (e) {
 };
 
 /**
- * A simple cursor-like implementation that combines generator and stream functionality. Cursor exposes all the normal stream methods such as pipe, unpipe, on, once etc as well as an initialize method that returns a generator and allows for documents to be iteratively resolved. Using both the generator based cursor interface and stream interface concurrently is not recommended as both utilize the TransformStream on data, on error and on finish events and as will likely cause unpredictable behavior
+ * A simple cursor-like implementation that combines generator and stream functionality. Cursor exposes all the normal stream methods such as pipe, unpipe, on, once etc as well as an initialize method that returns a generator and allows for documents to be iteratively resolved. Using both the generator based cursor interface and stream interface concurrently is not recommended as both utilize the TransformStream on data, on error and on finish events and as such will likely cause unpredictable behavior
  * @type {Cursor}
  * @extends {TranformStream}
  */
