@@ -26,6 +26,7 @@
   "description": "Core data is the ORM wrapping component of periodicjs.core.controller that provides database adapters for commonly used databases (ie. mongo, sql, postgres). Adapters provide a standard set of methods and options regardless of the type of database and so the methods for querying, updating, creating etc. that are exposed across your application always expect the same inputs and provide the same outputs.",
   "devDependencies": {
     "chai": "~3.0.0",
+    "chai-spies": "^0.7.1",
     "coveralls": "^2.11.15",
     "fs-extra": "~0.30.0",
     "grunt": "~0.4.5",

@@ -310,7 +310,7 @@ const _UPDATE = function (options, cb) {
  * Convenience method for .findAndUpdate mongoose method (returns updated document instead of normal mongo update status object)
  * @param  {Object}   options Configurable options for mongo update
  * @param {Boolean} options.isPatch If true the update will be treated as a patch instead of a full document update
- * @param {Object} options.updatedoc Either specific fields to update in the case of a patch otherwise the entire updatedated document
+ * @param {Object} options.updatedoc Either specific fields to update in the case of a patch otherwise the entire updated document
  * @param {string} options.id The mongo _id of the document that should be updated
  * @param {Boolean} [options.skip_xss] If true xss character escaping will be skipped and xss whitelist is ignored
  * @param {Boolean} [options.html_xss] If true xss npm module will be used for character escaping
@@ -339,7 +339,7 @@ const _UPDATED = function (options, cb) {
  * @param {Object} [options.updatequery] Alias for options.query if options.query is set this option is ignored
  * @param {Object} options.updateattributes A mongo update formatted object
  * @param {Object} [options.updatedoc] Object specifying fields to update with new values this object will be formatted as a patch update. If options.updateattributes is set this option is ignored
- * @param  {Function} cb      Call function for update all
+ * @param  {Function} cb      Callback function for update all
  */
 const _UPDATE_ALL = function (options, cb) {
   try {
@@ -360,7 +360,7 @@ const _UPDATE_ALL = function (options, cb) {
  * Convenience method for .create mongoose method
  * @param  {Object}   options Configurable options for mongo create
  * @param {Object} [options.model=this.model] The mongoose model for query will default to the this.model value if not defined
- * @param {Object} [options.newdoc=options] The document that should be created. If newdoc option is not passed it is assumed that the entire options object is the document
+ * @param {Object|Object[]} [options.newdoc=options] The document that should be created. If newdoc option is not passed it is assumed that the entire options object is the document
  * @param {Boolean} options.bulk_create If true and options.newdoc is an array each index will be treated as an individual document and be bulk inserted
  * @param {Boolean} [options.skip_xss] If true xss character escaping will be skipped and xss whitelist is ignored
  * @param {Boolean} [options.html_xss] If true xss npm module will be used for character escaping
@@ -432,8 +432,8 @@ const _DELETED = function (options, cb) {
 };
 
 /**
- * An mongoose specific adapter which provides CRUD methods for a given model
- * @class Mongo_Adapter
+ * A mongoose specific adapter which provides CRUD methods for a given model
+ * @type Mongo_Adapter
  */
 const MONGO_ADAPTER = class Mongo_Adapter {
   /**

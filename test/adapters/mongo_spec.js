@@ -121,6 +121,34 @@ describe('Mongo adapter testing', function () {
 				done();
 			});
 		});
+		it('Should be able to batch create documents if bulk_create options is true', done => {
+			let newdoc = [{
+				contact: {
+					first_name: 'Fizz',
+					last_name: 'Buzz',
+					dob: moment('01/06/1990', 'MM/DD/YYYY').format()
+				}
+			}, {
+				contact: {
+					first_name: 'Foo',
+					last_name: 'Bar',
+					dob: moment('01/07/1990', 'MM/DD/YYYY').format()
+				}
+			}, {
+				contact: {
+					first_name: 'Alice',
+					last_name: 'Bob',
+					dob: moment('01/08/1990', 'MM/DD/YYYY').format()
+				}
+			}];
+			Adapter.create({ newdoc, bulk_create: true })
+				.try(result => {
+					expect(result).to.be.an('array');
+					expect(result.filter(data => data._id).length).to.equal(3);
+					done();
+				})
+				.catch(done);
+		});
 	});
 	describe('Adapter .query method testing', () => {
 		let query = {
@@ -459,6 +487,48 @@ describe('Mongo adapter testing', function () {
 					done();
 				})
 				.catch(done);
+		});
+		it('Should update multiple documents if multi option is true', done => {
+			Adapter.update({ 
+				query: {},
+				multi: true,
+				updateattributes: { $set: { 'contact.first_name': 'SameFirstName' } }
+			})
+				.then(Adapter.query.bind(Adapter))
+				.try(result => {
+					expect(result).to.be.an('array');
+					expect(result.filter(doc => doc.contact.first_name === 'SameFirstName').length).to.equal(result.length);
+					done();
+				})
+				.catch(done);
+		});
+		it('Should generate patch and update multiple document is updatedoc is set and updateattributes is not', done => {
+			Adapter.update({ 
+				query: {},
+				multi: true,
+				updatedoc: {
+					contact: {
+						first_name: 'AnotherSameFirstName'
+					}
+				}
+			})
+				.then(Adapter.query.bind(Adapter))
+				.try(result => {
+					expect(result).to.be.an('array');
+					expect(result.filter(doc => doc.contact.first_name === 'AnotherSameFirstName').length).to.equal(result.length);
+					done();
+				})
+				.catch(done);
+		});
+		it('Should throw an error if neither updateattributes nor updatedoc is set', done => {
+			Adapter.update({ multi: true })
+				.then(() => {
+					done(new Error('Should not execute'));
+				}, e => {
+					expect(e instanceof Error).to.be.true;
+					expect(e.message).to.equal('Either updateattributes or updatedoc option must be set in order to execute multi update');
+					done();
+				});
 		});
 	});
 });
