@@ -26,6 +26,7 @@ describe('Cursor constructor spec', function () {
 				let timeout = setTimeout(function () {
 					if (i !== 4) cursor.write({ iteration: i });
 					else cursor.end({ iteration: i });
+					clearTimeout(timeout);
 				}, (i) ? 250 * i : 250);
 			}
 			cursor.on('data', data => {
@@ -45,6 +46,7 @@ describe('Cursor constructor spec', function () {
 				let timeout = setTimeout(function () {
 					if (i !== 4) cursor.write(i.toString());
 					else cursor.end(i.toString());
+					clearTimeout(timeout);
 				}, (i) ? 250 * i : 250);
 			}
 			cursor.on('data', data => {
@@ -63,6 +65,7 @@ describe('Cursor constructor spec', function () {
 				let timeout = setTimeout(function () {
 					if (i !== 4) cursor.write({ iteration: i });
 					else cursor.end({ iteration: i });
+					clearTimeout(timeout);
 				}, (i) ? 250 * i : 250);
 			}
 			let full_data = [];
@@ -86,6 +89,7 @@ describe('Cursor constructor spec', function () {
 				let timeout = setTimeout(function () {
 					if (i !== 4) cursor.write({ iteration: i });
 					else cursor.end({ iteration: i });
+					clearTimeout(timeout);
 				}, (i) ? 250 * i : 250);
 			}
 			let full_data = [];
@@ -113,6 +117,8 @@ describe('Cursor constructor spec', function () {
 					expect(full_data[0].iteration).to.equal(0);
 					expect(nextSuccess).to.have.been.called.exactly(4);
 					expect(next.done).to.be.true;
+					expect(cursor._isDone).to.be.true;
+					expect(cursor._isInitialized).to.be.true;
 					done();
 				}, done);
 		});

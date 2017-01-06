@@ -68,7 +68,11 @@ const CURSOR = class Cursor extends TransformStream {
 		});
 		return function* () {
 			let value;
-			while (!this._isDone) value = yield this._next().then((typeof value === 'function') ? value : onSuccess, onError);
+			while (!this._isDone) {
+				value = yield this._next()
+					.try((typeof value === 'function') ? value : onSuccess)
+					.catch(onError);
+			}
 		}.bind(this);
 	}
 };
