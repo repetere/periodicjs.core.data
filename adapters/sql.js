@@ -500,7 +500,7 @@ const SQL_ADAPTER = class SQL_Adapter {
    * @param  {Object} options Configurable options for the SQL adapter
    * @param {Object} options.db_connection Either a instantiated instance of Sequelize or the connection details for a instance
    * @param {string} options.docid Specifies the field which should be queried by default for .load
-   * @param {Object\Object[]} options.model Either a registered sequelize model or if options.model is an Array it will be treated as the arguments to define a sequelize model
+   * @param {Object|Object[]} options.model Either a registered sequelize model or if options.model is an Array it will be treated as the arguments to define a sequelize model
    * @param {Object|string} [options.sort="createdat DESC"] Specifies default sort logic for .query and .search queries
    * @param {number} [options.limit=500] Specifies a default limit to the total documents returned in a .query and .search queries
    * @param {number} [options.skip=0] Specifies a default amount of documents to skip in a .query and .search queries

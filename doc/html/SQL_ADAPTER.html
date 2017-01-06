@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Class: MONGO_ADAPTER</title>
+    <title>JSDoc: Class: SQL_ADAPTER</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
 
-    <h1 class="page-title">Class: MONGO_ADAPTER</h1>
+    <h1 class="page-title">Class: SQL_ADAPTER</h1>
 
     
 
@@ -28,9 +28,9 @@
 
 <header>
     
-        <h2>MONGO_ADAPTER</h2>
+        <h2>SQL_ADAPTER</h2>
         
-            <div class="class-description"><p>A mongoose specific adapter which provides CRUD methods for a given model</p></div>
+            <div class="class-description"><p>A sequelize SQL specific adapter which provides CRUD methods for a given model</p></div>
         
     
 </header>
@@ -44,11 +44,15 @@
     <h2>Constructor</h2>
     
 
-    <h4 class="name" id="MONGO_ADAPTER"><span class="type-signature"></span>new MONGO_ADAPTER<span class="signature">(options<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="SQL_ADAPTER"><span class="type-signature"></span>new SQL_ADAPTER<span class="signature">(options)</span><span class="type-signature"></span></h4>
 
     
 
 
+
+<div class="description">
+    <p>Constructor for SQL_Adapter</p>
+</div>
 
 
 
@@ -60,6 +64,48 @@
 
     <h5>Parameters:</h5>
     
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Configurable options for the SQL adapter</p>
+                <h6>Properties</h6>
+                
 
 <table class="params">
     <thead>
@@ -87,7 +133,7 @@
 
         <tr>
             
-                <td class="name"><code>options</code></td>
+                <td class="name"><code>db_connection</code></td>
             
 
             <td class="type">
@@ -102,8 +148,6 @@
             
                 <td class="attributes">
                 
-                    &lt;optional><br>
-                
 
                 
 
@@ -114,37 +158,12 @@
             
                 <td class="default">
                 
-                    {}
-                
                 </td>
             
 
-            <td class="description last"><p>Configurable options for the mongo adapter</p>
-                <h6>Properties</h6>
-                
+            <td class="description last"><p>Either a instantiated instance of Sequelize or the connection details for a instance</p></td>
+        </tr>
 
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-        <th>Attributes</th>
-        
-
-        
-        <th>Default</th>
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
     
 
         <tr>
@@ -191,6 +210,9 @@
             
                 
 <span class="param-type">Object</span>
+|
+
+<span class="param-type">Array.&lt;Object></span>
 
 
             
@@ -212,7 +234,7 @@
                 </td>
             
 
-            <td class="description last"><p>Mongoose model that should be used in CRUD operations by default</p></td>
+            <td class="description last"><p>Either a registered sequelize model or if options.model is an Array it will be treated as the arguments to define a sequelize model</p></td>
         </tr>
 
     
@@ -249,51 +271,12 @@
             
                 <td class="default">
                 
-                    "-createdat"
+                    "createdat DESC"
                 
                 </td>
             
 
             <td class="description last"><p>Specifies default sort logic for .query and .search queries</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>db_connection</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Object</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-                <td class="default">
-                
-                    mongoose
-                
-                </td>
-            
-
-            <td class="description last"><p>A custom mongoose db instance if connecting to a different mongoose instance. Will default to cached mongoose connection if not passed. If this option is defined the changeset scheam will be registered on this instance.</p></td>
         </tr>
 
     
@@ -411,7 +394,7 @@
                 </td>
             
 
-            <td class="description last"><p>Optional population configuration for documents returned in .load and .search queries</p></td>
+            <td class="description last"><p>Optional population configuration for documents returned in .load and .search queries (see sequelize include for proper formatting)</p></td>
         </tr>
 
     
@@ -613,7 +596,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="adapters_mongo.js.html">adapters/mongo.js</a>, <a href="adapters_mongo.js.html#line438">line 438</a>
+        <a href="adapters_sql.js.html">adapters/sql.js</a>, <a href="adapters_sql.js.html#line497">line 497</a>
     </li></ul></dd>
     
 
@@ -821,7 +804,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="adapters_mongo.js.html">adapters/mongo.js</a>, <a href="adapters_mongo.js.html#line537">line 537</a>
+        <a href="adapters_sql.js.html">adapters/sql.js</a>, <a href="adapters_sql.js.html#line600">line 600</a>
     </li></ul></dd>
     
 
@@ -1082,7 +1065,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="adapters_mongo.js.html">adapters/mongo.js</a>, <a href="adapters_mongo.js.html#line549">line 549</a>
+        <a href="adapters_sql.js.html">adapters/sql.js</a>, <a href="adapters_sql.js.html#line612">line 612</a>
     </li></ul></dd>
     
 
@@ -1294,7 +1277,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="adapters_mongo.js.html">adapters/mongo.js</a>, <a href="adapters_mongo.js.html#line513">line 513</a>
+        <a href="adapters_sql.js.html">adapters/sql.js</a>, <a href="adapters_sql.js.html#line576">line 576</a>
     </li></ul></dd>
     
 
@@ -1555,7 +1538,195 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="adapters_mongo.js.html">adapters/mongo.js</a>, <a href="adapters_mongo.js.html#line480">line 480</a>
+        <a href="adapters_sql.js.html">adapters/sql.js</a>, <a href="adapters_sql.js.html#line543">line 543</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>Returns a Promise when cb argument is not passed</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Object</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="raw"><span class="type-signature"></span>raw<span class="signature">(options, cb)</span><span class="type-signature"> &rarr; {Object}</span></h4>
+
+    
+
+
+
+<div class="description">
+    <p>Raw query method for adapter see _RAW for more details</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>Configurable options for raw query</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>cb</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
+
+            <td class="description last"><p>Callback argument. When cb is not passed function returns a Promise</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="adapters_sql.js.html">adapters/sql.js</a>, <a href="adapters_sql.js.html#line623">line 623</a>
     </li></ul></dd>
     
 
@@ -1767,7 +1938,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="adapters_mongo.js.html">adapters/mongo.js</a>, <a href="adapters_mongo.js.html#line491">line 491</a>
+        <a href="adapters_sql.js.html">adapters/sql.js</a>, <a href="adapters_sql.js.html#line554">line 554</a>
     </li></ul></dd>
     
 
@@ -1979,7 +2150,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="adapters_mongo.js.html">adapters/mongo.js</a>, <a href="adapters_mongo.js.html#line502">line 502</a>
+        <a href="adapters_sql.js.html">adapters/sql.js</a>, <a href="adapters_sql.js.html#line565">line 565</a>
     </li></ul></dd>
     
 
@@ -2263,7 +2434,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="adapters_mongo.js.html">adapters/mongo.js</a>, <a href="adapters_mongo.js.html#line526">line 526</a>
+        <a href="adapters_sql.js.html">adapters/sql.js</a>, <a href="adapters_sql.js.html#line589">line 589</a>
     </li></ul></dd>
     
 
