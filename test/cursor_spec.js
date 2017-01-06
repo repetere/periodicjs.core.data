@@ -88,28 +88,30 @@ describe('Cursor constructor spec', function () {
 					else cursor.end({ iteration: i });
 				}, (i) ? 250 * i : 250);
 			}
-			let generator = cursor.initialize()();
 			let full_data = [];
-			let next = generator.next(function (data) {
+			let generator = cursor.initialize(function (data) {
+				full_data.push(data);
+				return data;
+			})();
+			let nextSuccess = chai.spy(function (data) {
 				full_data.push(data);
 				return data;
 			});
+			let next = generator.next(nextSuccess);
 			let index = 0;
 			Promisie.doWhilst(() => {
 				return next.value
 					.then(result => {
 						expect(result).to.have.property('iteration');
 						expect(result.iteration).to.equal(index++);
-						next = generator.next(function (data) {
-							full_data.push(data);
-							return data;
-						});
+						next = generator.next(nextSuccess);
 						return next;
 					})
 					.catch(e => Promisie.reject(e));
 			}, n => !n.done)
 				.then(() => {
-					expect(full_data[0].iteration).to.equal(1);
+					expect(full_data[0].iteration).to.equal(0);
+					expect(nextSuccess).to.have.been.called.exactly(4);
 					expect(next.done).to.be.true;
 					done();
 				}, done);
