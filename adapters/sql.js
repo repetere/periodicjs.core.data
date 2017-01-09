@@ -75,7 +75,7 @@ const _QUERY = function (options, cb) {
  */
 const _STREAM = function (options, cb) {
   try {
-    _QUERY(options, (err, documents) => {
+    _QUERY.call(this, options, (err, documents) => {
       if (err) cb(err);
       else {
         //Cursor class which extends the Node TransformStream class
@@ -84,7 +84,7 @@ const _STREAM = function (options, cb) {
           //Becuase of inconsistencies in generator behavior when mixing sync and async operations writes are done as a setImmediate task
           let task = setImmediate(() => {
             if (i === documents.length - 1) querystream.end(documents[i]);
-            else querystream.write(data[i]);
+            else querystream.write(documents[i]);
             clearImmediate(task);
           });
         }
@@ -232,9 +232,7 @@ const _LOAD = function (options, cb) {
     }, {});
     let query = (options.query && typeof options.query === 'object') ? options.query : {
       $or: [{
-        id: options.query
-      }, {
-        [docid]: options.query
+        [docid || 'id']: options.query
       }]
     };
     let queryOptions = {
@@ -378,7 +376,7 @@ const _UPDATE_ALL = function (options, cb) {
  * @param  {Object}   options Configurable options for SQL create
  * @param {Object} [options.model=this.model] The sequelize model for query will default to the this.model value if not defined
  * @param {Object|Object[]} [options.newdoc=options] The document that should be created. If newdoc option is not passed it is assumed that the entire options object is the document. A bulk create will be done if newdoc is an array and bulk_create option is true
- * @param {Boolean} options.bulk_create If true and options.newdoc is an array each index will be treated as an individual document and be bulk inserted
+ * @param {Boolean} options.bulk_create If true and options.newdoc is an array each index will be treated as an individual document and be bulk inserted (WARNING: Due to limitations in MySQL and other SQL variants bulk creates can't assign auto-incremented ids please use accordingly)
  * @param {Boolean} [options.skip_xss] If true xss character escaping will be skipped and xss whitelist is ignored
  * @param {Boolean} [options.html_xss] If true xss npm module will be used for character escaping
  * @param {Object}  [options.xss_whitelist=this.xss_whitelist] XSS white-list configuration for xss npm module
@@ -419,7 +417,8 @@ const _DELETE = function (options, cb) {
   try {
     let Model = options.model || this.model;
     let deleteid = options.deleteid || options.id;
-    if (typeof deleteid !== 'string') throw new Error('Must specify "deleteid" or "id" for delete');
+    console.log({ deleteid });
+    if (typeof deleteid !== 'string' && typeof deleteid !== 'number') throw new Error('Must specify "deleteid" or "id" for delete');
     Model.destroy({
       where: [{
         id: deleteid
@@ -512,7 +511,7 @@ const SQL_ADAPTER = class SQL_Adapter {
    */
   constructor (options = {}) {
     this.db_connection = (options.db_connection && typeof options.db_connection === 'object' && options.db_connection.models && options.db_connection.define) ? options.db_connection : new Sequelize(options.db_connection);
-    this.docid = options.docid;
+    this.docid = options.docid || 'id';
     if (options.model && typeof options.model === 'object') {
       if (Array.isArray(options.model)) this.model = this.db_connection.define(...options.model);
       else this.model = options.model;
@@ -524,7 +523,7 @@ const SQL_ADAPTER = class SQL_Adapter {
     if (Array.isArray(options.search)) this.searchfields = options.search;
     else if (typeof options.search === 'string') this.searchfields = options.search.split(',');
     else this.searchfields = [];
-    this.population = options.population;
+    this.population = options.population || [];
     this.fields = options.fields;
     this.pagelength = options.pagelength || 15;
     this.cache = options.cache;

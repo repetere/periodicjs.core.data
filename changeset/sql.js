@@ -4,8 +4,7 @@ const SQL_Adapter = require(path.join(__dirname, '../adapters/sql'));
 const Sequelize = require('sequelize');
 
 /**
- * Default changeset schema for mongo databases
- * @type {mongoose.Schema}
+ * Default changeset schema for sql databases
  */
 const CHANGESET = {
 	createdat: {
@@ -45,9 +44,9 @@ const MODEL_OPTIONS = {
 };
 
 /**
- * Registers a changeset schema to a custom mongoose instance
- * @param  {Object} db_connection A mongoose connection where the changeset collection should be registered
- * @return {Object}               Returns an instance of a Mongo_Adapter that has been configured for the changeset collection
+ * Registers a changeset schema to a sequelize instance
+ * @param  {Object} db_connection A sequelize connection where the changeset collection should be registered
+ * @return {Object}               Returns an instance of a SQL_Adapter that has been configured for the changeset collection
  */
 module.exports = function register_changeset (db_connection) {
   let ChangeSet;
