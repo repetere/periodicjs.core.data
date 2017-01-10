@@ -14,11 +14,17 @@ chai.use(require('chai-spies'));
 var Example;
 var db;
 var connection;
-var connectionOptions = ['test_core_data', 'travis', '', {
+var localConnectionOptions = ['test_core_data', 'root', 'root', {
+	dialect: 'mysql',
+	port: 8889,
+	host: 'localhost'
+}];
+var travisConnectionOptions = ['test_core_data', 'travis', '', {
 	dialect: 'mysql',
 	port: 3306,
 	host: 'localhost'
 }];
+var connectionOptions = (process.env.NODE_ENV === 'test') ? travisConnectionOptions : localConnectionOptions;
 var connectDB = function () {
 	return new Promisie((resolve, reject) => {
 		db = new Sequelize(...connectionOptions);
