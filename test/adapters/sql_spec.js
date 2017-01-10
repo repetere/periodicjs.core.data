@@ -14,7 +14,7 @@ chai.use(require('chai-spies'));
 var Example;
 var db;
 var connection;
-var connectionOptions = ['test_core_data', 'root', '', {
+var connectionOptions = ['test_core_data', 'travis', '', {
 	dialect: 'mysql',
 	port: 3306,
 	host: 'localhost'
