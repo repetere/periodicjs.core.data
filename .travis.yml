@@ -12,6 +12,7 @@ addons:
 
 services:
   - mongodb
+  - mysql
 
 notifications:
   irc:
@@ -30,6 +31,9 @@ notifications:
 
 before_script:
   - npm install 
+
+before_install:
+  - mysql -e 'CREATE DATABASE test_core_data;'
 
 install: 
  - npm install  grunt-cli istanbul -g

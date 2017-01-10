@@ -14,10 +14,10 @@ chai.use(require('chai-spies'));
 var Example;
 var db;
 var connection;
-var connectionOptions = ['pas_dev_1', 'vln9834rer', 'lo8wjhetru98', {
+var connectionOptions = ['test_core_data', 'root', 'root', {
 	dialect: 'mysql',
-	port: 3306,
-	host: 'pf-dbsql-dev.promisefinancial.net'
+	port: 8889,
+	host: 'localhost'
 }];
 var connectDB = function () {
 	return new Promisie((resolve, reject) => {
