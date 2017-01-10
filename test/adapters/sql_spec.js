@@ -556,10 +556,10 @@ describe('SQL Adapter Testing', function () {
 		it('Should format result using sequelize formatting if passed', done => {
 			Adapter.raw({
 				query: 'SELECT * FROM Examples',
-				format_result: Sequelize.QueryTypes.SELECT
+				format_result: Sequelize.QueryTypes.UPDATE
 			})
 				.try(result => {
-					expect(result).to.be.an('array');
+					expect(result).to.equal(undefined);
 					done();
 				})
 				.catch(done);

@@ -486,7 +486,7 @@ const _RAW = function (options, cb) {
     let type;
     if (typeof query !== 'string') throw new Error('Raw queries must be strings');
     if (options.format_result !== false) {
-      type = (options.format_result && (typeof options.format_result === 'function' || typeof options.format_result === 'object')) ? options.format_result : Sequelize.QueryTypes[query.replace(/^(\w+)\s+.+$/, '$1')];
+      type = (options.format_result && (typeof options.format_result === 'string')) ? options.format_result : Sequelize.QueryTypes[query.replace(/^(\w+)\s+.+$/, '$1')];
     }
     this.db_connection.query(query, { type, model: Model })
       .then(result => cb(null, result))
