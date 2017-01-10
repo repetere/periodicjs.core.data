@@ -370,7 +370,6 @@ const _UPDATE_ALL = function (options, cb) {
     let query = options.query || options.updatequery;
     let update = options.updateattributes || options.updatedoc;
     if (!update || (update && typeof update !== 'object')) throw new Error('Either updateattributes or updatedoc option must be set in order to execute multi update');
-    console.log({ query, update });
     Model.update(update, query)
       .then(result => cb(null, result))
       .catch(cb);
