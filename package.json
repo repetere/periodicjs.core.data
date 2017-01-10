@@ -19,7 +19,6 @@
   "dependencies": {
     "flat": "~2.0.1",
     "jsondiffpatch": "~0.2.4",
-    "mysql": "^2.12.0",
     "pluralize": "~1.1.2",
     "string-to-json": "~0.1.0",
     "xss": "~0.2.13"
