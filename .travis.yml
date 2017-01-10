@@ -46,4 +46,4 @@ git:
   submodules: false  
 
 script: 
-  - npm set progress=false && NODE_ENV=test && grunt test
+  - npm set progress=false && export NODE_ENV=test && grunt test
