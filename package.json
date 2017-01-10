@@ -19,6 +19,7 @@
   "dependencies": {
     "flat": "~2.0.1",
     "jsondiffpatch": "~0.2.4",
+    "mysql": "^2.12.0",
     "pluralize": "~1.1.2",
     "string-to-json": "~0.1.0",
     "xss": "~0.2.13"
@@ -26,6 +27,7 @@
   "description": "Core data is the ORM wrapping component of periodicjs.core.controller that provides database adapters for commonly used databases (ie. mongo, sql, postgres). Adapters provide a standard set of methods and options regardless of the type of database and so the methods for querying, updating, creating etc. that are exposed across your application always expect the same inputs and provide the same outputs.",
   "devDependencies": {
     "chai": "~3.0.0",
+    "chai-spies": "^0.7.1",
     "coveralls": "^2.11.15",
     "fs-extra": "~0.30.0",
     "grunt": "~0.4.5",
@@ -44,7 +46,8 @@
     "mocha-lcov-reporter": "^1.2.0",
     "moment": "~2.13.0",
     "mongoose": "~4.4.14",
-    "promisie": "~1.5.2"
+    "promisie": "~1.5.3",
+    "sequelize": "~3.28.0"
   },
   "directories": {},
   "dist": {
@@ -89,6 +92,6 @@
   "scripts": {
     "test": "mocha -R spec --recursive"
   },
-  "version": "0.0.9",
+  "version": "0.1.0",
   "license": "MIT"
 }
