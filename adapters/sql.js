@@ -4,6 +4,7 @@ const Sequelize = require('sequelize');
 const Promisie = require('promisie');
 const utility = require(path.join(__dirname, '../utility/index'));
 const xss_default_whitelist = require(path.join(__dirname, '../defaults/index')).xss_whitelist();
+const IS_SYNCED = Symbol.for('changeset_is_synced');
 
 /**
  * Takes a set of fields either as a comma delimited list or a mongoose style fields object and converts them into a sequelize compatible array
@@ -44,6 +45,7 @@ const _QUERY = function (options, cb) {
     let queryOptions = {
       where: (options.query && typeof options.query === 'object') ? options.query : {}
     };
+    if (Object.keys(queryOptions.where).length === 0) delete queryOptions.where;
     if (fields) queryOptions.attributes = GENERATE_SELECT(fields);
     if (sort) queryOptions.order = sort;
     if (skip) queryOptions.offset = skip;
@@ -275,16 +277,22 @@ const _UPDATE = function (options, cb) {
     };
     let generateChanges = (callback) => {
       if (!options.track_changes || (options.track_changes && !options.ensure_changes)) callback();
-      if (options.track_changes) {
+      if (options.track_changes && this.changeset) {
         let changeset = (!options.isPatch) ? utility.diff(changesetData.original, changesetData.update, true) : options.updatedoc;
-        Promisie.map(Object.keys(changeset), (key) => {
-          return this.changeset.create({
-            parent_document_id: options.id,
-            field_name: key,
-            original: (changeset[key].length > 1) ? changeset[key][0] : 'new value',
-            update: (changeset[key].length < 2) ? changeset[0] : ((changeset[key].length === 2) ? changeset[key][1] : 'deleted value')
-          });
-        })
+        (() => {
+          if (this.changeset[IS_SYNCED]) return Promisie.resolve(true);
+          return this.sync();
+        })()
+          .then(() => {
+            return Promisie.map(Object.keys(changeset), (key) => {
+              return this.changeset.create({
+                parent_document_id: options.id,
+                field_name: key,
+                original: (changeset[key].length > 1) ? changeset[key][0] : 'new value',
+                update: (changeset[key].length < 2) ? changeset[0] : ((changeset[key].length === 2) ? changeset[key][1] : 'deleted value')
+              });
+            });
+          })
           .then(result => {
             if (options.ensure_changes) callback(null, result);
           }, e => {
@@ -297,8 +305,6 @@ const _UPDATE = function (options, cb) {
     let Model = options.model || this.model;
     let where = {
       $or: [{
-        id: options.id
-      }, {
         [options.docid || this.docid]: options.id
       }]
     };
@@ -364,7 +370,10 @@ const _UPDATE_ALL = function (options, cb) {
     let query = options.query || options.updatequery;
     let update = options.updateattributes || options.updatedoc;
     if (!update || (update && typeof update !== 'object')) throw new Error('Either updateattributes or updatedoc option must be set in order to execute multi update');
-    Model.update(update, query, cb);
+    console.log({ query, update });
+    Model.update(update, query)
+      .then(result => cb(null, result))
+      .catch(cb);
   }
   catch (e) {
     cb(e);
@@ -417,7 +426,6 @@ const _DELETE = function (options, cb) {
   try {
     let Model = options.model || this.model;
     let deleteid = options.deleteid || options.id;
-    console.log({ deleteid });
     if (typeof deleteid !== 'string' && typeof deleteid !== 'number') throw new Error('Must specify "deleteid" or "id" for delete');
     Model.destroy({
       where: [{
@@ -480,7 +488,7 @@ const _RAW = function (options, cb) {
     if (options.format_result !== false) {
       type = (options.format_result && (typeof options.format_result === 'function' || typeof options.format_result === 'object')) ? options.format_result : Sequelize.QueryTypes[query.replace(/^(\w+)\s+.+$/, '$1')];
     }
-    Model.query(query, { type, model: Model })
+    this.db_connection.query(query, { type, model: Model })
       .then(result => cb(null, result))
       .catch(cb);
   }
@@ -497,19 +505,34 @@ const SQL_ADAPTER = class SQL_Adapter {
   /**
    * Constructor for SQL_Adapter
    * @param  {Object} options Configurable options for the SQL adapter
-   * @param {Object} options.db_connection Either a instantiated instance of Sequelize or the connection details for a instance
-   * @param {string} options.docid Specifies the field which should be queried by default for .load
+   * @param {Object|*[]} options.db_connection Either a instantiated instance of Sequelize or the connection details for a instance as an array of ordered arguments or options object
+   * @param {string}  [options.db_connetion.db_name] Name of the database (only used if instantiating a new Sequelize instance) 
+   * @param {string}  [options.db_connetion.db_user] Username for the database (only used if instantiating a new Sequelize instance)
+   * @param {string}  [options.db_connetion.db_password] Password for the database (only used if instantiating a new Sequelize instance)
+   * @param {string}  [options.db_connetion.db_options] Options for connection to the database ie. port, hostname (only used if instantiating a new Sequelize instance) 
+   * @param {string} [options.docid="id"] Specifies the field which should be queried by default for .load
    * @param {Object|Object[]} options.model Either a registered sequelize model or if options.model is an Array it will be treated as the arguments to define a sequelize model
    * @param {Object|string} [options.sort="createdat DESC"] Specifies default sort logic for .query and .search queries
    * @param {number} [options.limit=500] Specifies a default limit to the total documents returned in a .query and .search queries
    * @param {number} [options.skip=0] Specifies a default amount of documents to skip in a .query and .search queries
-   * @param {Object|Object[]} [options.population] Optional population configuration for documents returned in .load and .search queries (see sequelize include for proper formatting)
+   * @param {Object|Object[]} [options.population=[]] Optional population configuration for documents returned in .load and .search queries (see sequelize include for proper formatting)
    * @param {Object} [options.fields] Optional configuration for limiting fields that are returned in .load and .search queries
    * @param {number} [options.pagelength=15] Specifies max number of documents that should appear in each sub-set for pagination
    * @param {Boolean} [options.track_changes=true] Sets default track changes behavior for udpates
    * @param {string[]} [options.xss_whitelist=false] Configuration for XSS whitelist package. If false XSS whitelisting will be ignored
    */
   constructor (options = {}) {
+    if (options.db_connection && typeof options.db_connection === 'object') {
+      if (options.db_connection.models && options.db_connection.define) this.db_connection = options.db_connection;
+      else if (Array.isArray(options.db_connection)) {
+        let connectionOptions = options.db_connection;
+        this.db_connection = new Sequelize(...connectionOptions);
+      }
+      else if (options.db_connection.db_name && options.db_connection.db_user && options.db_connection.db_password) {
+        let { db_name, db_user, db_password, db_options } = options.db_connection;
+        this.db_connection = new Sequelize(db_name, db_user, db_password, db_options);
+      }
+    }
     this.db_connection = (options.db_connection && typeof options.db_connection === 'object' && options.db_connection.models && options.db_connection.define) ? options.db_connection : new Sequelize(options.db_connection);
     this.docid = options.docid || 'id';
     if (options.model && typeof options.model === 'object') {
@@ -531,6 +554,36 @@ const SQL_ADAPTER = class SQL_Adapter {
     this.track_changes = (options.track_changes === false || this.changeset === false) ? false : true;
     this.xss_whitelist = options.xss_whitelist || xss_default_whitelist;
     this._useCache = (options.useCache && options.cache) ? true : false;
+  }
+  /**
+   * Sync defined sequelize models with SQL db
+   * @param  {Object}  [options={}] Configurable options for sequelize sync method
+   * @param  {Function} [cb=false] Callback argument. When cb is not passed function returns a Promise    
+   * @return {Object}          Returns a Promise when cb argument is not passed
+   */
+  sync (options = {}, cb = false) {
+    if (typeof options === 'function') cb = options;
+    let _sync = function (callback) {
+      try {
+        this.db_connection.sync(options)
+          .then(connection => connection.authenticate())
+          .then(() => {
+            if (this.changeset && !this.changeset[IS_SYNCED]) {
+              Object.defineProperty(this.changeset, IS_SYNCED, {
+                value: true,
+                enumerable: false
+              });
+            }
+            callback(null, { status: 'ok' });
+          })
+          .catch(callback);
+      }
+      catch (e) {
+        callback(e);
+      }
+    }.bind(this);
+    if (typeof cb === 'function') _sync(cb);
+    else return Promisie.promisify(_sync)();
   }
   /**
    * Query method for adapter see _QUERY and _QUERY_WITH_PAGINATION for more details

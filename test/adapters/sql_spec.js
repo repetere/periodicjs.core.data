@@ -7,6 +7,9 @@ const Sequelize = require('sequelize');
 const moment = require('moment');
 const AdapterInterface = require(path.join(__dirname, '../../index'));
 const ExampleSchema = require(path.join(__dirname, '../examples/sequelize_model'));
+const SQL_Adapter = require(path.join(__dirname, '../../adapters/sql'));
+
+chai.use(require('chai-spies'));
 
 var Example;
 var db;
@@ -18,11 +21,7 @@ var connectionOptions = ['pas_dev_1', 'vln9834rer', 'lo8wjhetru98', {
 }];
 var connectDB = function () {
 	return new Promisie((resolve, reject) => {
-		db = new Sequelize('pas_dev_1', 'vln9834rer', 'lo8wjhetru98', {
-			dialect: 'mysql',
-			port: 3306,
-			host: 'pf-dbsql-dev.promisefinancial.net'
-		});
+		db = new Sequelize(...connectionOptions);
 		Example = db.define(...ExampleSchema);
 		db.sync({ force: true })
 			.then(_connection => _connection.authenticate())
@@ -42,6 +41,14 @@ describe('SQL Adapter Testing', function () {
 				done();
 			}, done);
 	});
+	after(done => {
+		Promisie.parallel({
+			delete_examples: Adapter.model.destroy.bind(Adapter.model, { where: { $or: [{ id: null }, { id: { $not: null } }] } }),
+			delete_changes: Adapter.changeset.model.destroy.bind(Adapter.changeset.model, { where: { id: { $not: null } } })
+		})
+			.then(() => done())
+			.catch(done);
+	});
 	describe('Basic adapter testing', () => {
 		before(() => {
 			Adapter = AdapterInterface.create({ adapter: 'sql', model: Example, db_connection: db });
@@ -52,6 +59,47 @@ describe('SQL Adapter Testing', function () {
 		it('Should be able to set the adapter model with just the adapter name', () => {
 			let TestAdapter = AdapterInterface.create({ adapter: 'sql', model: ExampleSchema });
 			expect(Adapter.model.name).to.equal('Example');
+		});
+	});
+	describe('Registering new models/using connection credentials', () => {
+		it('Should be able to take connection settings and initialize a connection to the db', () => {
+			let AdapterOne = AdapterInterface.create({ adapter: 'sql', db_connection: connectionOptions });
+			expect(AdapterOne instanceof SQL_Adapter).to.be.true;
+			let AdapterTwo = AdapterInterface.create({
+				adapter: 'sql',
+				db_connection: {
+					db_name: connectionOptions[0],
+					db_user: connectionOptions[1],
+					db_password: connectionOptions[2],
+					db_options: connectionOptions[3]
+				}
+			});
+			expect(AdapterTwo instanceof SQL_Adapter).to.be.true;
+		});
+		it('Should be able to sync a model that has not already been registered with the database', done => {
+			let ExampleAdapter = AdapterInterface.create({ adapter: 'sql', db_connection: db, model: Example });
+			ExampleAdapter.sync()
+				.try(result => {
+					expect(ExampleAdapter.changeset[Symbol.for('changeset_is_synced')]).to.be.true;
+					expect(result.status).to.equal('ok');
+					done();
+				})
+				.catch(done);
+		});
+		it('Should be able to sync a model and pass a callback arugment', done => {
+			let ExampleAdapter = AdapterInterface.create({ adapter: 'sql', db_connection: db, model: Example });
+			ExampleAdapter.sync({}, (err, result) => {
+				if (err) done(err);
+				else {
+					ExampleAdapter.sync((err2, result2) => {
+						if (err2) done(err2);
+						else {
+							expect(result2.status).to.equal('ok');
+							done();
+						}
+					});
+				}
+			});
 		});
 	});
 	describe('Adapter .create method testing', () => {
@@ -213,7 +261,7 @@ describe('SQL Adapter Testing', function () {
 		});
 		it('Should be able to handle composed queries', done => {
 			let query = {
-				'first_name': 'hello%'
+				'first_name': { $like: 'hello%' }
 			};
 			let values = 'Foobar,Fizzbuzz';
 			Adapter.search({ query, values, docid: 'last_name', inclusive: true })
@@ -227,7 +275,7 @@ describe('SQL Adapter Testing', function () {
 		});
 		it('Should be able to handle pagination', done => {
 			let query = {
-				'first_name': 'hello%'
+				'first_name': { $like: 'hello%' }
 			};
 			let values = 'Foobar,Fizzbuzz';
 			Adapter.search({ query, values, docid: 'last_name', inclusive: true, paginate: true, pagelength: 2, limit: 5 })
@@ -331,6 +379,198 @@ describe('SQL Adapter Testing', function () {
 				})
 				.try(result => {
 					expect(result).to.not.be.ok;
+					done();
+				})
+				.catch(done);
+		});
+	});
+	describe('Adapter .update method testing', () => {
+		let ChangesetAdapter;
+		let example;
+		let totalChanges;
+		before(done => {
+			ChangesetAdapter = Adapter.changeset;
+			Adapter.query({ limit: 1, query: { id: { $not: null } } })
+				.then(result => {
+					example = result[0].dataValues;
+					done();
+				}, done);
+		});
+		it('Should be able to handle put updates', done => {
+			let updatedoc = Object.assign({}, example);
+			updatedoc.first_name = 'Hi';
+			let sync = Adapter.sync.bind(Adapter);
+			let sync_spy = chai.spy(sync);
+			Adapter.sync = sync_spy;
+			Adapter.update({ id: updatedoc.id, originalrevision: example, updatedoc })
+				.try(result => {
+					expect(result).to.deep.equal([1]);
+					expect(result).to.not.have.property('createdat');
+					expect(sync_spy).to.have.been.called.exactly(1);
+					return Promisie.retry(() => {
+						return ChangesetAdapter.query({ query: { 'parent_document_id': updatedoc.id } })
+							.then(result => {
+								if (!result.length) return Promise.reject(new Error('Not Found'));
+								else return Promise.resolve(result);
+							}, e => Promise.reject(e));
+					}, { times: 3, timeout: 500 });
+				})
+				.try(result => {
+					expect(Array.isArray(result)).to.be.true;
+					expect(result.filter(change => Number(change.parent_document_id) === updatedoc.id).length).to.equal(result.length);
+					Adapter.sync = sync;
+					done();
+				})
+				.catch(done);
+		});
+		it('Should return updated document if return_updated is true', function (done) {
+			this.timeout(5000);
+			let updatedoc = Object.assign({}, example);
+			updatedoc.first_name = 'Bob';
+			let sync = Adapter.sync.bind(Adapter);
+			let sync_spy = chai.spy(sync);
+			Adapter.sync = sync_spy;
+			(function () {
+				return new Promisie(resolve => {
+					let timeout = setTimeout(function () {
+						resolve();
+						clearTimeout(timeout);
+					}, 2000);
+				});
+			})()
+				.then(() => Adapter.update({ id: updatedoc.id, originalrevision: example, updatedoc, return_updated: true }))
+				.try(result => {
+					expect(result).to.be.an('object');
+					expect(result).to.have.property('createdat');
+					expect(sync_spy).to.not.have.been.called();
+					return Promisie.retry(() => {
+						return ChangesetAdapter.query({ query: { 'parent_document_id': updatedoc.id } })
+							.then(result => {
+								if (!result.length) return Promise.reject(new Error('Not Found'));
+								else return Promise.resolve(result);
+							}, e => Promise.reject(e));
+					}, { times: 3, timeout: 500 });
+				})
+				.try(result => {
+					expect(Array.isArray(result)).to.be.true;
+					expect(result.filter(change => Number(change.parent_document_id) === updatedoc.id).length).to.equal(result.length);
+					Adapter.sync = sync;
+					done();
+				})
+				.catch(done);
+		});
+		it('Should be able to handle patch updates', done => {
+			let updatedoc = {
+				last_name: 'Greg'
+			};
+			Adapter.update({ id: example.id, originalrevision: example, updatedoc, isPatch: true })
+				.try(result => {
+					expect(result).to.deep.equal([1]);
+					expect(result).to.not.have.property('createdat');
+					return Promisie.retry(() => {
+						return ChangesetAdapter.query({ query: { 'parent_document_id': example.id } })
+							.then(result => {
+								if (result.length < 3) return Promise.reject(new Error('Not Found'));
+								else return Promise.resolve(result);
+							}, e => Promise.reject(e));
+					}, { times: 3, timeout: 500 });
+				})
+				.try(result => {
+					expect(Array.isArray(result)).to.be.true;
+					expect(result.filter(change => Number(change.parent_document_id) === example.id).length).to.equal(result.length);
+					done();
+				})
+				.catch(done);
+		});
+		it('Should wait for changeset to save if ensure_changes is true', done => {
+			let updatedoc = {
+				last_name: 'Nick'
+			};
+			Adapter.update({ id: example.id, originalrevision: example, updatedoc, isPatch: true, ensure_changes: true })
+				.try(result => {
+					expect(result).to.have.property('changes');
+					expect(result).to.have.property('update');
+					done();
+				})
+				.catch(done);
+		});
+		it('Should not track changes if track_changes is false', done => {
+			let updatedoc = Object.assign({}, example);
+			updatedoc.first_name = 'Bob';
+			Promisie.resolve(ChangesetAdapter.model.destroy({ where: { id: { $not: null } } }))
+				.then(() => Adapter.update({ id: updatedoc.id, originalrevision: example, updatedoc, track_changes: false }))
+				.try(result => {
+					expect(result).to.deep.equal([1]);
+					expect(result).to.not.have.property('createdat');
+					return Promisie.retry(() => {
+						return ChangesetAdapter.query({ query: { 'parent_document_id': example.id } })
+							.then(result => {
+								return result;
+							}, e => Promise.reject(e));
+					}, { times: 3, timeout: 500 });
+				})
+				.try(result => {
+					expect(Array.isArray(result)).to.be.true;
+					expect(result.length).to.equal(0);
+					done();
+				})
+				.catch(done);
+		});
+		it('Should update multiple documents if multi option is true', done => {
+			Adapter.update({ 
+				query: { where: { first_name: { $not: null } } },
+				multi: true,
+				updateattributes: { 'first_name': 'SameFirstName' }
+			})
+				.then(() => Adapter.query())
+				.try(result => {
+					expect(result).to.be.an('array');
+					expect(result.filter(doc => doc.first_name === 'SameFirstName').length).to.equal(result.length);
+					done();
+				})
+				.catch(done);
+		});
+		it('Should throw an error if neither updateattributes nor updatedoc is set', done => {
+			Adapter.update({ multi: true })
+				.then(() => {
+					done(new Error('Should not execute'));
+				}, e => {
+					expect(e instanceof Error).to.be.true;
+					expect(e.message).to.equal('Either updateattributes or updatedoc option must be set in order to execute multi update');
+					done();
+				});
+		});
+	});
+	describe('Adapter .raw method testing', () => {
+		it('Should skip formatting if options.format_result is false', done => {
+			Adapter.raw({
+				query: 'SELECT * FROM Examples',
+				format_result: false
+			})
+				.try(result => {
+					expect(result).to.be.an('array');
+					done();
+				})
+				.catch(done);
+		});
+		it('Should format result using sequelize formatting if passed', done => {
+			Adapter.raw({
+				query: 'SELECT * FROM Examples',
+				format_result: Sequelize.QueryTypes.SELECT
+			})
+				.try(result => {
+					expect(result).to.be.an('array');
+					done();
+				})
+				.catch(done);
+		});
+		it('Should format result by inferring query type if format_result is true', done => {
+			Adapter.raw({
+				query: 'SELECT * FROM Examples',
+				format_result: true
+			})
+				.try(result => {
+					expect(result).to.be.an('array');
 					done();
 				})
 				.catch(done);
