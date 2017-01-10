@@ -24,6 +24,7 @@ var travisConnectionOptions = ['test_core_data', 'travis', '', {
 	port: 3306,
 	host: 'localhost'
 }];
+//Set env in travis script and check for the test env
 var connectionOptions = (process.env.NODE_ENV === 'test') ? travisConnectionOptions : localConnectionOptions;
 var connectDB = function () {
 	return new Promisie((resolve, reject) => {
