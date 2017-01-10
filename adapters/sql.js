@@ -505,7 +505,7 @@ const SQL_ADAPTER = class SQL_Adapter {
   /**
    * Constructor for SQL_Adapter
    * @param  {Object} options Configurable options for the SQL adapter
-   * @param {Object|*[]} options.db_connection Either a instantiated instance of Sequelize or the connection details for a instance as an array of ordered arguments or options object
+   * @param {Object|string[]} options.db_connection Either a instantiated instance of Sequelize or the connection details for a instance as an array of ordered arguments or options object
    * @param {string}  [options.db_connetion.db_name] Name of the database (only used if instantiating a new Sequelize instance) 
    * @param {string}  [options.db_connetion.db_user] Username for the database (only used if instantiating a new Sequelize instance)
    * @param {string}  [options.db_connetion.db_password] Password for the database (only used if instantiating a new Sequelize instance)

@@ -244,6 +244,7 @@ A sequelize SQL specific adapter which provides CRUD methods for a given model
 
 * [SQL_ADAPTER](#SQL_ADAPTER) : <code>SQL_Adapter</code>
     * [new SQL_ADAPTER(options)](#new_SQL_ADAPTER_new)
+    * [.sync([options], [cb])](#SQL_ADAPTER+sync) ⇒ <code>Object</code>
     * [.query([options], [cb])](#SQL_ADAPTER+query) ⇒ <code>Object</code>
     * [.search([options], [cb])](#SQL_ADAPTER+search) ⇒ <code>Object</code>
     * [.stream([options], [cb])](#SQL_ADAPTER+stream) ⇒ <code>Object</code>
@@ -262,17 +263,34 @@ Constructor for SQL_Adapter
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
 | options | <code>Object</code> |  | Configurable options for the SQL adapter |
-| options.db_connection | <code>Object</code> |  | Either a instantiated instance of Sequelize or the connection details for a instance |
-| options.docid | <code>string</code> |  | Specifies the field which should be queried by default for .load |
+| options.db_connection | <code>Object</code> &#124; <code>Array.&lt;string&gt;</code> |  | Either a instantiated instance of Sequelize or the connection details for a instance as an array of ordered arguments or options object |
+| [options.db_connetion.db_name] | <code>string</code> |  | Name of the database (only used if instantiating a new Sequelize instance) |
+| [options.db_connetion.db_user] | <code>string</code> |  | Username for the database (only used if instantiating a new Sequelize instance) |
+| [options.db_connetion.db_password] | <code>string</code> |  | Password for the database (only used if instantiating a new Sequelize instance) |
+| [options.db_connetion.db_options] | <code>string</code> |  | Options for connection to the database ie. port, hostname (only used if instantiating a new Sequelize instance) |
+| [options.docid] | <code>string</code> | <code>&quot;\&quot;id\&quot;&quot;</code> | Specifies the field which should be queried by default for .load |
 | options.model | <code>Object</code> &#124; <code>Array.&lt;Object&gt;</code> |  | Either a registered sequelize model or if options.model is an Array it will be treated as the arguments to define a sequelize model |
 | [options.sort] | <code>Object</code> &#124; <code>string</code> | <code>&quot;createdat DESC&quot;</code> | Specifies default sort logic for .query and .search queries |
 | [options.limit] | <code>number</code> | <code>500</code> | Specifies a default limit to the total documents returned in a .query and .search queries |
 | [options.skip] | <code>number</code> | <code>0</code> | Specifies a default amount of documents to skip in a .query and .search queries |
-| [options.population] | <code>Object</code> &#124; <code>Array.&lt;Object&gt;</code> |  | Optional population configuration for documents returned in .load and .search queries (see sequelize include for proper formatting) |
+| [options.population] | <code>Object</code> &#124; <code>Array.&lt;Object&gt;</code> | <code>[]</code> | Optional population configuration for documents returned in .load and .search queries (see sequelize include for proper formatting) |
 | [options.fields] | <code>Object</code> |  | Optional configuration for limiting fields that are returned in .load and .search queries |
 | [options.pagelength] | <code>number</code> | <code>15</code> | Specifies max number of documents that should appear in each sub-set for pagination |
 | [options.track_changes] | <code>Boolean</code> | <code>true</code> | Sets default track changes behavior for udpates |
 | [options.xss_whitelist] | <code>Array.&lt;string&gt;</code> | <code>false</code> | Configuration for XSS whitelist package. If false XSS whitelisting will be ignored |
+
+<a name="SQL_ADAPTER+sync"></a>
+
+### sqL_ADAPTER.sync([options], [cb]) ⇒ <code>Object</code>
+Sync defined sequelize models with SQL db
+
+**Kind**: instance method of <code>[SQL_ADAPTER](#SQL_ADAPTER)</code>  
+**Returns**: <code>Object</code> - Returns a Promise when cb argument is not passed  
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| [options] | <code>Object</code> | <code>{}</code> | Configurable options for sequelize sync method |
+| [cb] | <code>function</code> | <code>false</code> | Callback argument. When cb is not passed function returns a Promise |
 
 <a name="SQL_ADAPTER+query"></a>
 
@@ -872,7 +890,7 @@ Convenience method for .create sequelize method
 | options | <code>Object</code> |  | Configurable options for SQL create |
 | [options.model] | <code>Object</code> | <code>this.model</code> | The sequelize model for query will default to the this.model value if not defined |
 | [options.newdoc] | <code>Object</code> &#124; <code>Array.&lt;Object&gt;</code> | <code>options</code> | The document that should be created. If newdoc option is not passed it is assumed that the entire options object is the document. A bulk create will be done if newdoc is an array and bulk_create option is true |
-| options.bulk_create | <code>Boolean</code> |  | If true and options.newdoc is an array each index will be treated as an individual document and be bulk inserted |
+| options.bulk_create | <code>Boolean</code> |  | If true and options.newdoc is an array each index will be treated as an individual document and be bulk inserted (WARNING: Due to limitations in MySQL and other SQL variants bulk creates can't assign auto-incremented ids please use accordingly) |
 | [options.skip_xss] | <code>Boolean</code> |  | If true xss character escaping will be skipped and xss whitelist is ignored |
 | [options.html_xss] | <code>Boolean</code> |  | If true xss npm module will be used for character escaping |
 | [options.xss_whitelist] | <code>Object</code> | <code>this.xss_whitelist</code> | XSS white-list configuration for xss npm module |

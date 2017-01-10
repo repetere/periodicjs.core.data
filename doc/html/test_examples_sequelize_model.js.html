@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Source: utility/depopulate.js</title>
+    <title>JSDoc: Source: test/examples/sequelize_model.js</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
 
-    <h1 class="page-title">Source: utility/depopulate.js</h1>
+    <h1 class="page-title">Source: test/examples/sequelize_model.js</h1>
 
     
 
@@ -27,25 +27,35 @@
     <section>
         <article>
             <pre class="prettyprint source linenums"><code>'use strict';
-const mongoose = require('mongoose');
+const Sequelize = require('sequelize');
 
 /**
- * Depopulates a populated mongoose document
- * @param  {Object} data The mongoose document that should be depopulated
- * @return {Object}      Returns a fully depopulated mongoose document
+ * Default changeset schema for sql databases
  */
-module.exports = function depopulate (data) {
-	let depopulated = (Array.isArray(data)) ? [] : {};
-	for (let key in data) {
-		if (data[key] &amp;&amp; typeof data[key] === 'object') {
-			if (data[key] instanceof Date) depopulated[key] = data[key];
-			else if (data[key]._id &amp;&amp; mongoose.Types.ObjectId.isValid(data[key]._id.toString())) depopulated[key] = data[key]._id.toString();
-			else depopulated[key] = depopulate(data[key]);
-		}
-		else depopulated[key] = data[key];
+const EXAMPLE = {
+	createdat: {
+		type: Sequelize.DATE
+	},
+	first_name: {
+		type: Sequelize.STRING
+	},
+	last_name: {
+		type: Sequelize.STRING
+	},
+	email: {
+		type: Sequelize.STRING
 	}
-	return depopulated;
-};</code></pre>
+};
+
+const MODEL_OPTIONS = {
+	underscored: true,
+	timestamps: true,
+	indexes: [{
+		fields: ['createdat']
+	}]
+};
+
+module.exports = ['Example', EXAMPLE, MODEL_OPTIONS];</code></pre>
         </article>
     </section>
 

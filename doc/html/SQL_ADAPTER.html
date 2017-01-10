@@ -140,6 +140,9 @@
             
                 
 <span class="param-type">Object</span>
+|
+
+<span class="param-type">Array.&lt;string></span>
 
 
             
@@ -161,7 +164,155 @@
                 </td>
             
 
-            <td class="description last"><p>Either a instantiated instance of Sequelize or the connection details for a instance</p></td>
+            <td class="description last"><p>Either a instantiated instance of Sequelize or the connection details for a instance as an array of ordered arguments or options object</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>db_connetion.db_name</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>Name of the database (only used if instantiating a new Sequelize instance)</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>db_connetion.db_user</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>Username for the database (only used if instantiating a new Sequelize instance)</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>db_connetion.db_password</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>Password for the database (only used if instantiating a new Sequelize instance)</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>db_connetion.db_options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>Options for connection to the database ie. port, hostname (only used if instantiating a new Sequelize instance)</p></td>
         </tr>
 
     
@@ -183,6 +334,8 @@
             
                 <td class="attributes">
                 
+                    &lt;optional><br>
+                
 
                 
 
@@ -192,6 +345,8 @@
 
             
                 <td class="default">
+                
+                    "id"
                 
                 </td>
             
@@ -390,6 +545,8 @@
 
             
                 <td class="default">
+                
+                    []
                 
                 </td>
             
@@ -596,7 +753,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="adapters_sql.js.html">adapters/sql.js</a>, <a href="adapters_sql.js.html#line497">line 497</a>
+        <a href="adapters_sql.js.html">adapters/sql.js</a>, <a href="adapters_sql.js.html#line504">line 504</a>
     </li></ul></dd>
     
 
@@ -804,7 +961,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="adapters_sql.js.html">adapters/sql.js</a>, <a href="adapters_sql.js.html#line600">line 600</a>
+        <a href="adapters_sql.js.html">adapters/sql.js</a>, <a href="adapters_sql.js.html#line652">line 652</a>
     </li></ul></dd>
     
 
@@ -1065,7 +1222,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="adapters_sql.js.html">adapters/sql.js</a>, <a href="adapters_sql.js.html#line612">line 612</a>
+        <a href="adapters_sql.js.html">adapters/sql.js</a>, <a href="adapters_sql.js.html#line664">line 664</a>
     </li></ul></dd>
     
 
@@ -1277,7 +1434,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="adapters_sql.js.html">adapters/sql.js</a>, <a href="adapters_sql.js.html#line576">line 576</a>
+        <a href="adapters_sql.js.html">adapters/sql.js</a>, <a href="adapters_sql.js.html#line628">line 628</a>
     </li></ul></dd>
     
 
@@ -1538,7 +1695,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="adapters_sql.js.html">adapters/sql.js</a>, <a href="adapters_sql.js.html#line543">line 543</a>
+        <a href="adapters_sql.js.html">adapters/sql.js</a>, <a href="adapters_sql.js.html#line595">line 595</a>
     </li></ul></dd>
     
 
@@ -1726,7 +1883,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="adapters_sql.js.html">adapters/sql.js</a>, <a href="adapters_sql.js.html#line623">line 623</a>
+        <a href="adapters_sql.js.html">adapters/sql.js</a>, <a href="adapters_sql.js.html#line675">line 675</a>
     </li></ul></dd>
     
 
@@ -1938,7 +2095,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="adapters_sql.js.html">adapters/sql.js</a>, <a href="adapters_sql.js.html#line554">line 554</a>
+        <a href="adapters_sql.js.html">adapters/sql.js</a>, <a href="adapters_sql.js.html#line606">line 606</a>
     </li></ul></dd>
     
 
@@ -2150,7 +2307,219 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="adapters_sql.js.html">adapters/sql.js</a>, <a href="adapters_sql.js.html#line565">line 565</a>
+        <a href="adapters_sql.js.html">adapters/sql.js</a>, <a href="adapters_sql.js.html#line617">line 617</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>Returns a Promise when cb argument is not passed</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Object</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="sync"><span class="type-signature"></span>sync<span class="signature">(options<span class="signature-attributes">opt</span>, cb<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Object}</span></h4>
+
+    
+
+
+
+<div class="description">
+    <p>Sync defined sequelize models with SQL db</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    {}
+                
+                </td>
+            
+
+            <td class="description last"><p>Configurable options for sequelize sync method</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>cb</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
+
+            <td class="description last"><p>Callback argument. When cb is not passed function returns a Promise</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="adapters_sql.js.html">adapters/sql.js</a>, <a href="adapters_sql.js.html#line564">line 564</a>
     </li></ul></dd>
     
 
@@ -2434,7 +2803,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="adapters_sql.js.html">adapters/sql.js</a>, <a href="adapters_sql.js.html#line589">line 589</a>
+        <a href="adapters_sql.js.html">adapters/sql.js</a>, <a href="adapters_sql.js.html#line641">line 641</a>
     </li></ul></dd>
     
 
@@ -2498,13 +2867,13 @@
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="CURSOR.html">CURSOR</a></li><li><a href="DB_ADAPTER_INTERFACE.html">DB_ADAPTER_INTERFACE</a></li><li><a href="MONGO_ADAPTER.html">MONGO_ADAPTER</a></li><li><a href="SQL_ADAPTER.html">SQL_ADAPTER</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_CREATE">_CREATE</a></li><li><a href="global.html#_DELETE">_DELETE</a></li><li><a href="global.html#_DELETED">_DELETED</a></li><li><a href="global.html#_LOAD">_LOAD</a></li><li><a href="global.html#_QUERY">_QUERY</a></li><li><a href="global.html#_QUERY_WITH_PAGINATION">_QUERY_WITH_PAGINATION</a></li><li><a href="global.html#_RAW">_RAW</a></li><li><a href="global.html#_SEARCH">_SEARCH</a></li><li><a href="global.html#_STREAM">_STREAM</a></li><li><a href="global.html#_UPDATE">_UPDATE</a></li><li><a href="global.html#_UPDATE_ALL">_UPDATE_ALL</a></li><li><a href="global.html#_UPDATED">_UPDATED</a></li><li><a href="global.html#defaultError">defaultError</a></li><li><a href="global.html#defaultSuccess">defaultSuccess</a></li><li><a href="global.html#GENERATE_PATCH">GENERATE_PATCH</a></li><li><a href="global.html#GENERATE_PUT">GENERATE_PUT</a></li><li><a href="global.html#GENERATE_SELECT">GENERATE_SELECT</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="CURSOR.html">CURSOR</a></li><li><a href="DB_ADAPTER_INTERFACE.html">DB_ADAPTER_INTERFACE</a></li><li><a href="MONGO_ADAPTER.html">MONGO_ADAPTER</a></li><li><a href="SQL_ADAPTER.html">SQL_ADAPTER</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_CREATE">_CREATE</a></li><li><a href="global.html#_DELETE">_DELETE</a></li><li><a href="global.html#_DELETED">_DELETED</a></li><li><a href="global.html#_LOAD">_LOAD</a></li><li><a href="global.html#_QUERY">_QUERY</a></li><li><a href="global.html#_QUERY_WITH_PAGINATION">_QUERY_WITH_PAGINATION</a></li><li><a href="global.html#_RAW">_RAW</a></li><li><a href="global.html#_SEARCH">_SEARCH</a></li><li><a href="global.html#_STREAM">_STREAM</a></li><li><a href="global.html#_UPDATE">_UPDATE</a></li><li><a href="global.html#_UPDATE_ALL">_UPDATE_ALL</a></li><li><a href="global.html#_UPDATED">_UPDATED</a></li><li><a href="global.html#defaultError">defaultError</a></li><li><a href="global.html#defaultSuccess">defaultSuccess</a></li><li><a href="global.html#EXAMPLE">EXAMPLE</a></li><li><a href="global.html#GENERATE_PATCH">GENERATE_PATCH</a></li><li><a href="global.html#GENERATE_PUT">GENERATE_PUT</a></li><li><a href="global.html#GENERATE_SELECT">GENERATE_SELECT</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Fri Jan 06 2017 17:45:02 GMT-0500 (EST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Tue Jan 10 2017 12:40:04 GMT-0500 (EST)
 </footer>
 
 <script> prettyPrint(); </script>
