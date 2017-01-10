@@ -17,12 +17,14 @@ var connection;
 var localConnectionOptions = ['test_core_data', 'root', 'root', {
 	dialect: 'mysql',
 	port: 8889,
-	host: 'localhost'
+	host: 'localhost',
+	logging: false
 }];
 var travisConnectionOptions = ['test_core_data', 'travis', '', {
 	dialect: 'mysql',
 	port: 3306,
-	host: 'localhost'
+	host: 'localhost',
+	logging: false
 }];
 //Set env in travis script and check for the test env
 var connectionOptions = (process.env.NODE_ENV === 'test') ? travisConnectionOptions : localConnectionOptions;
