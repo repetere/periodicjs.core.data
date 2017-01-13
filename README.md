@@ -63,7 +63,7 @@ mongoose.connect();
 const AdapterInterface = require('periodicjs.core.data');
 const ExampleSchema = require('./some/path/to/schema');
 let ExampleModel = mongoose.model('Example', ExampleSchema);
-let config = { limit: 500, sort: '-createdat'};
+let config = { limit: 500, sort: '-createdat' };
 let Adapter = AdapterIterface.create(Object.assign({ adapter: 'mongo', model: ExampleModel }, config)); //example core datum for the Example mongoose schema
 let exampleDocument = { //example mongo document
     title:'example document',
