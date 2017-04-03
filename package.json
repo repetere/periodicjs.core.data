@@ -42,11 +42,12 @@
     "grunt-simple-mocha": "~0.4.0",
     "istanbul": "^0.4.5",
     "jsdoc": "^3.4.3",
+    "lowkie": "^0.1.2",
     "mocha": "~2.2.5",
     "mocha-lcov-reporter": "^1.2.0",
     "moment": "~2.13.0",
     "mongoose": "~4.4.14",
-    "promisie": "~1.5.3",
+    "promisie": "^1.6.1",
     "sequelize": "~3.28.0"
   },
   "directories": {},
