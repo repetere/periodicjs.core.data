@@ -337,40 +337,40 @@ describe('Mongo adapter testing', function () {
         .catch(done);
     });
   });
-  describe('Adapter .delete method testing', () => {
-    let example;
-    before(done => {
-      Adapter.query({ limit: 2 })
-        .then(result => {
-          example = result;
-          done();
-        }, done);
-    });
-    it('Should be able to handle delete', done => {
-      Adapter.delete({ deleteid: example[0]._id.toString() })
-        .try(result => {
-          expect(result).to.equal('deleted');
-          return Adapter.load({ query: example[0]._id.toString() });
-        })
-        .try(result => {
-          expect(result).to.not.be.ok;
-          done();
-        })
-        .catch(done);
-    });
-    it('Should handle delete and return loaded object if return_deleted option is passed', done => {
-      Adapter.delete({ deleteid: example[1]._id.toString(), return_deleted: true })
-        .try(result => {
-          expect(result).to.deep.equal(example[1]);
-          return Adapter.load({ query: example[1]._id.toString() });
-        })
-        .try(result => {
-          expect(result).to.not.be.ok;
-          done();
-        })
-        .catch(done);
-    });
-  });
+  // describe('Adapter .delete method testing', () => {
+  //   let example;
+  //   before(done => {
+  //     Adapter.query({ limit: 2 })
+  //       .then(result => {
+  //         example = result;
+  //         done();
+  //       }, done);
+  //   });
+  //   it('Should be able to handle delete', done => {
+  //     Adapter.delete({ deleteid: example[0]._id.toString() })
+  //       .try(result => {
+  //         expect(result).to.equal('deleted');
+  //         return Adapter.load({ query: example[0]._id.toString() });
+  //       })
+  //       .try(result => {
+  //         expect(result).to.not.be.ok;
+  //         done();
+  //       })
+  //       .catch(done);
+  //   });
+  //   it('Should handle delete and return loaded object if return_deleted option is passed', done => {
+  //     Adapter.delete({ deleteid: example[1]._id.toString(), return_deleted: true })
+  //       .try(result => {
+  //         expect(result).to.deep.equal(example[1]);
+  //         return Adapter.load({ query: example[1]._id.toString() });
+  //       })
+  //       .try(result => {
+  //         expect(result).to.not.be.ok;
+  //         done();
+  //       })
+  //       .catch(done);
+  //   });
+  // });
   // describe('Adapter .update method testing', function () {
   //   this.timeout(5000);
   //   let example;
