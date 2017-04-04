@@ -38,14 +38,13 @@ const _QUERY = function (options, cb) {
           break;
         case 'function':
           chain = chain.sort(sort);
+          break;
       }
     }
     if (skip) chain = chain.offset(Number(skip));
     if (limit) chain = chain.limit(Number(limit));
-    chain
-      .data(Object.assign({ forceClones: (options.forceClones === false) ? false : true }))
-      .then(result => cb(null, result))
-      .catch(cb);
+    let result = chain.data(Object.assign({ forceClones: (options.forceClones === false) ? false : true }));
+    cb(null, result);
   }
   catch (e) {
     cb(e);
@@ -235,7 +234,10 @@ const _LOAD = function (options, cb) {
       };
       method = 'findOne';
     }
-    if (useQuery) this.query(Object.assign(options, { limit: 1 }), cb);
+    if (useQuery) _QUERY.call(this, Object.assign(options, { limit: 1 }), (err, result) => {
+      if (err) cb(err);
+      else cb(null, result.slice(0, 1)[0]);
+    });
     else {
       Model[method](query)
         .then(result => cb(null, result))
@@ -396,14 +398,13 @@ const _CREATE = function (options, cb) {
     let newdoc = options.newdoc || options;
     let xss_whitelist = (options.xss_whitelist) ? options.xss_whitelist : this.xss_whitelist;
     if (Array.isArray(newdoc) && options.bulk_create) {
-      Promisie.map(newdoc, (doc) => {
-        return Model.insert(utility.enforceXSSRules(doc, xss_whitelist, options));
-      })
+      newdoc = newdoc.map(doc => utility.enforceXSSRules(doc, xss_whitelist, options));
+      Model.insert(newdoc)
         .then(created => cb(null, created))
         .catch(cb);
     } else {
       Model.insert(utility.enforceXSSRules(newdoc, xss_whitelist, (options.newdoc) ? options : undefined))
-        .then(created => cb(null, created))
+        .then(created => cb(null, created[0]))
         .catch(cb);
     }
   }
@@ -425,9 +426,8 @@ const _DELETE = function (options, cb) {
     let Model = options.model || this.model;
     let deleteid = options.deleteid || options.id;
     if (typeof deleteid !== 'string') throw new Error('Must specify "deleteid" or "id" for delete');
-    Model.findAndRemove({ _id: deleteid })
-      .then(status => cb(null status))
-      .catch(cb); 
+    let result = Model.findAndRemove({ _id: { $eq: deleteid } });
+    cb(null, 'deleted');
   }
   catch (e) {
     cb(e);
