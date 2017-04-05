@@ -1,6 +1,7 @@
 'use strict';
 const path = require('path');
 const Promisie = require('promisie');
+const fs = Promisie.promisifyAll(require('fs'));
 const chai = require('chai');
 const expect = chai.expect;
 const lowkie = require('lowkie');
@@ -12,7 +13,7 @@ var Example;
 var db;
 var connectDB = function () {
   return new Promisie((resolve, reject) => {
-    lowkie.connect(path.join(__dirname, './sampledb.json'))
+    lowkie.connect(path.join(__dirname, '../examples/sampledb.json'))
       .then(connection => {
         db = connection;
         resolve(db);
@@ -21,7 +22,7 @@ var connectDB = function () {
   });
 };
 
-describe('Mongo adapter testing', function () {
+describe('Loki adapter testing', function () {
   let Adapter;
   before(done => {
     connectDB()
@@ -31,13 +32,13 @@ describe('Mongo adapter testing', function () {
       }, done);
   });
   after(done => {
-    if (Adapter && Example) {
-      //let ChangeSet = mongoose.model('Changeset');
-      Promisie.resolve(Example.clear({ removeIndices: true }))
-        .then(() => done())
-        .catch(done);
-    }
-    else done();
+    fs.readdirAsync(path.join(__dirname, '../examples'))
+      .map(filename => {
+        if (/sampledb/.test(filename)) return fs.unlinkAsync(path.join(__dirname, '../examples', filename));
+        else return 'skipping';
+      })
+      .then(() => done())
+      .catch(done);
   });
   describe('Basic adapter testing', () => {
     before(() => {
@@ -279,6 +280,7 @@ describe('Mongo adapter testing', function () {
         .try(result => {
           expect(result).to.be.an('object');
           expect(result).to.have.property('contact');
+          expect(result.contact.last_name).to.equal('World');
           //expect(result.toObject()).to.have.property('createdat');
           done();
         })
@@ -337,199 +339,196 @@ describe('Mongo adapter testing', function () {
         .catch(done);
     });
   });
-  // describe('Adapter .delete method testing', () => {
-  //   let example;
-  //   before(done => {
-  //     Adapter.query({ limit: 2 })
-  //       .then(result => {
-  //         example = result;
-  //         done();
-  //       }, done);
-  //   });
-  //   it('Should be able to handle delete', done => {
-  //     Adapter.delete({ deleteid: example[0]._id.toString() })
-  //       .try(result => {
-  //         expect(result).to.equal('deleted');
-  //         return Adapter.load({ query: example[0]._id.toString() });
-  //       })
-  //       .try(result => {
-  //         expect(result).to.not.be.ok;
-  //         done();
-  //       })
-  //       .catch(done);
-  //   });
-  //   it('Should handle delete and return loaded object if return_deleted option is passed', done => {
-  //     Adapter.delete({ deleteid: example[1]._id.toString(), return_deleted: true })
-  //       .try(result => {
-  //         expect(result).to.deep.equal(example[1]);
-  //         return Adapter.load({ query: example[1]._id.toString() });
-  //       })
-  //       .try(result => {
-  //         expect(result).to.not.be.ok;
-  //         done();
-  //       })
-  //       .catch(done);
-  //   });
-  // });
-  // describe('Adapter .update method testing', function () {
-  //   this.timeout(5000);
-  //   let example;
-  //   let ChangeSet;
-  //   before(done => {
-  //     ChangeSet = mongoose.model('Changeset');
-  //     Adapter.query({ limit: 1 })
-  //       .then(result => {
-  //         example = result[0];
-  //         done();
-  //       }, done);
-  //   });
-  //   it('Should be able to handle put updates', done => {
-  //     let updatedoc = Object.assign({}, example._doc);
-  //     updatedoc.contact.first_name = 'Hi';
-  //     Adapter.update({ id: updatedoc._id, originalrevision: example._doc, updatedoc })
-  //       .try(result => {
-  //         expect(result).to.be.an('object');
-  //         expect(result).to.not.have.property('createdat');
-  //         return Promisie.retry(() => {
-  //           return Promisie.promisify(ChangeSet.find, ChangeSet)({ 'parent_document.id': updatedoc._id })
-  //             .then(result => {
-  //               if (!result.length) return Promise.reject(new Error('Not Found'));
-  //               else return Promise.resolve(result);
-  //             }, e => Promise.reject(e));
-  //         }, { times: 3, timeout: 500 });
-  //       })
-  //       .try(result => {
-  //         expect(Array.isArray(result)).to.be.true;
-  //         expect(result.length).to.equal(1);
-  //         done();
-  //       })
-  //       .catch(done);
-  //   });
-  //   it('Should return updated document if return_updated is true', done => {
-  //     let updatedoc = Object.assign({}, example._doc);
-  //     updatedoc.contact.first_name = 'Bob';
-  //     Adapter.update({ id: updatedoc._id, originalrevision: example._doc, updatedoc, return_updated: true })
-  //       .try(result => {
-  //         expect(result).to.be.an('object');
-  //         expect(result).to.have.property('createdat');
-  //         return Promisie.retry(() => {
-  //           return Promisie.promisify(ChangeSet.find, ChangeSet)({ 'parent_document.id': updatedoc._id })
-  //             .then(result => {
-  //               if (!result.length) return Promise.reject(new Error('Not Found'));
-  //               else return Promise.resolve(result);
-  //             }, e => Promise.reject(e));
-  //         }, { times: 3, timeout: 500 });
-  //       })
-  //       .try(result => {
-  //         expect(Array.isArray(result)).to.be.true;
-  //         expect(result.length).to.equal(2);
-  //         done();
-  //       })
-  //       .catch(done);
-  //   });
-  //   it('Should be able to handle patch updates', done => {
-  //     let updatedoc = {
-  //       contact: {
-  //         last_name: 'Greg'
-  //       }
-  //     };
-  //     Adapter.update({ id: example._doc._id, originalrevision: example._doc, updatedoc, isPatch: true })
-  //       .try(result => {
-  //         expect(result).to.be.an('object');
-  //         expect(result).to.not.have.property('createdat');
-  //         return Promisie.retry(() => {
-  //           return Promisie.promisify(ChangeSet.find, ChangeSet)({ 'parent_document.id': example._doc._id })
-  //             .then(result => {
-  //               if (result.length < 3) return Promise.reject(new Error('Not Found'));
-  //               else return Promise.resolve(result);
-  //             }, e => Promise.reject(e));
-  //         }, { times: 3, timeout: 500 });
-  //       })
-  //       .try(result => {
-  //         expect(Array.isArray(result)).to.be.true;
-  //         expect(result.length).to.equal(3);
-  //         done();
-  //       })
-  //       .catch(done);
-  //   });
-  //   it('Should wait for changeset to save if ensure_changes is true', done => {
-  //     let updatedoc = {
-  //       contact: {
-  //         last_name: 'Nick'
-  //       }
-  //     };
-  //     Adapter.update({ id: example._doc._id, originalrevision: example._doc, updatedoc, isPatch: true, ensure_changes: true })
-  //       .try(result => {
-  //         expect(result).to.have.property('changes');
-  //         expect(result).to.have.property('update');
-  //         done();
-  //       })
-  //       .catch(done);
-  //   });
-  //   it('Should not track changes if track_changes is false', done => {
-  //     let updatedoc = Object.assign({}, example._doc);
-  //     updatedoc.contact.first_name = 'Bob';
-  //     Adapter.update({ id: updatedoc._id, originalrevision: example._doc, updatedoc, track_changes: false })
-  //       .try(result => {
-  //         expect(result).to.be.an('object');
-  //         expect(result).to.not.have.property('createdat');
-  //         return Promisie.retry(() => {
-  //           return Promisie.promisify(ChangeSet.find, ChangeSet)({ 'parent_document.id': updatedoc._id })
-  //             .then(result => {
-  //               if (!result.length) return Promise.reject(new Error('Not Found'));
-  //               else return Promise.resolve(result);
-  //             }, e => Promise.reject(e));
-  //         }, { times: 3, timeout: 500 });
-  //       })
-  //       .try(result => {
-  //         expect(Array.isArray(result)).to.be.true;
-  //         expect(result.length).to.equal(4);
-  //         done();
-  //       })
-  //       .catch(done);
-  //   });
-  //   it('Should update multiple documents if multi option is true', done => {
-  //     Adapter.update({ 
-  //       query: {},
-  //       multi: true,
-  //       updateattributes: { $set: { 'contact.first_name': 'SameFirstName' } }
-  //     })
-  //       .then(Adapter.query.bind(Adapter))
-  //       .try(result => {
-  //         expect(result).to.be.an('array');
-  //         expect(result.filter(doc => doc.contact.first_name === 'SameFirstName').length).to.equal(result.length);
-  //         done();
-  //       })
-  //       .catch(done);
-  //   });
-  //   it('Should generate patch and update multiple document is updatedoc is set and updateattributes is not', done => {
-  //     Adapter.update({ 
-  //       query: {},
-  //       multi: true,
-  //       updatedoc: {
-  //         contact: {
-  //           first_name: 'AnotherSameFirstName'
-  //         }
-  //       }
-  //     })
-  //       .then(Adapter.query.bind(Adapter))
-  //       .try(result => {
-  //         expect(result).to.be.an('array');
-  //         expect(result.filter(doc => doc.contact.first_name === 'AnotherSameFirstName').length).to.equal(result.length);
-  //         done();
-  //       })
-  //       .catch(done);
-  //   });
-  //   it('Should throw an error if neither updateattributes nor updatedoc is set', done => {
-  //     Adapter.update({ multi: true })
-  //       .then(() => {
-  //         done(new Error('Should not execute'));
-  //       }, e => {
-  //         expect(e instanceof Error).to.be.true;
-  //         expect(e.message).to.equal('Either updateattributes or updatedoc option must be set in order to execute multi update');
-  //         done();
-  //       });
-  //   });
-  // });
+  describe('Adapter .delete method testing', () => {
+    let example;
+    let example1id;
+    let example2id;
+    before(done => {
+      Adapter.query({ limit: 2 })
+        .then(result => {
+          example = result;
+          done();
+        }, done);
+    });
+    it('Should be able to handle delete', done => {
+      Adapter.delete({ deleteid: example[0]._id })
+        .try(result => Adapter.load({ query: { _id: example[0]._id } }))
+        .try(result => {
+          expect(result).to.not.be.ok;
+          done();
+        })
+        .catch(done);
+    });
+    it('Should handle delete and return loaded object if return_deleted option is passed', done => {
+      Adapter.delete({ deleteid: example[1]._id, return_deleted: true })
+        .try(result => {
+          expect(result).to.deep.equal(example[1]);
+          return Adapter.load({ query: { _id: example[1]._id } });
+        })
+        .try(result => {
+          expect(result).to.not.be.ok;
+          done();
+        })
+        .catch(done);
+    });
+  });
+  describe('Adapter .update method testing', function () {
+    this.timeout(5000);
+    let example;
+    before(done => {
+      Adapter.query({ limit: 1 })
+        .then(result => {
+          example = result[0];
+          done();
+        }, done);
+    });
+    it('Should be able to handle put updates', done => {
+      let updatedoc = Object.assign({}, example);
+      updatedoc.contact.first_name = 'Hi';
+      Adapter.update({ id: updatedoc._id, originalrevision: example, updatedoc })
+        .try(result => {
+          expect(result).to.be.an('object');
+          expect(result).to.not.have.property('contact');
+          return Promisie.retry(() => {
+            return Adapter.changeset.query({ 'parent_document.id': updatedoc._id })
+              .then(result => {
+                if (!result.length) return Promise.reject(new Error('Not Found'));
+                else return Promise.resolve(result);
+              }, e => Promise.reject(e));
+          }, { times: 3, timeout: 500 });
+        })
+        .try(result => {
+          expect(Array.isArray(result)).to.be.true;
+          expect(result.length).to.equal(1);
+          done();
+        })
+        .catch(done);
+    });
+    it('Should return updated document if return_updated is true', done => {
+      let updatedoc = Object.assign({}, example);
+      updatedoc.contact.first_name = 'Bob';
+      Adapter.update({ id: updatedoc._id, originalrevision: example, updatedoc, return_updated: true })
+        .try(result => {
+          expect(result).to.be.an('object');
+          expect(result.contact.first_name).to.equal('Bob');
+          return Promisie.retry(() => {
+            return Adapter.changeset.query({ 'parent_document.id': updatedoc._id })
+              .then(result => {
+                if (!result.length) return Promise.reject(new Error('Not Found'));
+                else return Promise.resolve(result);
+              }, e => Promise.reject(e));
+          }, { times: 3, timeout: 500 });
+        })
+        .try(result => {
+          expect(Array.isArray(result)).to.be.true;
+          expect(result.length).to.equal(2);
+          done();
+        })
+        .catch(done);
+    });
+    it('Should be able to handle patch updates', done => {
+      let updatedoc = {
+        contact: {
+          last_name: 'Greg'
+        }
+      };
+      Adapter.update({ id: example._id, originalrevision: example, updatedoc, isPatch: true })
+        .then(() => Adapter.load({ query: { _id: example._id } }))
+        .try(result => {
+          expect(result.contact.last_name).to.equal('Greg');
+          return Promisie.retry(() => {
+            return Adapter.changeset.query({ 'parent_document.id': example._id })
+              .then(result => {
+                if (result.length < 3) return Promise.reject(new Error('Not Found'));
+                else return Promise.resolve(result);
+              }, e => Promise.reject(e));
+          }, { times: 3, timeout: 500 });
+        })
+        .try(result => {
+          expect(Array.isArray(result)).to.be.true;
+          expect(result.length).to.equal(3);
+          done();
+        })
+        .catch(done);
+    });
+    it('Should wait for changeset to save if ensure_changes is true', done => {
+      let updatedoc = {
+        contact: {
+          last_name: 'Nick'
+        }
+      };
+      Adapter.update({ id: example._id, originalrevision: example, updatedoc, isPatch: true, ensure_changes: true })
+        .try(result => {
+          expect(result).to.have.property('changes');
+          expect(result).to.have.property('update');
+          done();
+        })
+        .catch(done);
+    });
+    it('Should not track changes if track_changes is false', done => {
+      let updatedoc = Object.assign({}, example);
+      updatedoc.contact.first_name = 'Bob';
+      Adapter.update({ id: updatedoc._id, originalrevision: example, updatedoc, track_changes: false })
+        .try(result => {
+          expect(result).to.be.an('object');
+          expect(result).to.not.have.property('createdat');
+          return Promisie.retry(() => {
+            return Adapter.changeset.query({ 'parent_document.id': updatedoc._id })
+              .then(result => {
+                if (!result.length) return Promise.reject(new Error('Not Found'));
+                else return Promise.resolve(result);
+              }, e => Promise.reject(e));
+          }, { times: 3, timeout: 500 });
+        })
+        .try(result => {
+          expect(Array.isArray(result)).to.be.true;
+          expect(result.length).to.equal(4);
+          done();
+        })
+        .catch(done);
+    });
+    it('Should update multiple documents if multi option is true', done => {
+      Adapter.update({ 
+        query: {},
+        multi: true,
+        updateattributes: { $set: { 'contact.first_name': 'SameFirstName' } }
+      })
+        .then(Adapter.query.bind(Adapter))
+        .try(result => {
+          expect(result).to.be.an('array');
+          expect(result.filter(doc => doc.contact.first_name === 'SameFirstName').length).to.equal(result.length);
+          done();
+        })
+        .catch(done);
+    });
+    it('Should generate patch and update multiple document is updatedoc is set and updateattributes is not', done => {
+      Adapter.update({ 
+        query: {},
+        multi: true,
+        updatedoc: {
+          contact: {
+            first_name: 'AnotherSameFirstName'
+          }
+        }
+      })
+        .then(Adapter.query.bind(Adapter))
+        .try(result => {
+          expect(result).to.be.an('array');
+          expect(result.filter(doc => doc.contact.first_name === 'AnotherSameFirstName').length).to.equal(result.length);
+          done();
+        })
+        .catch(done);
+    });
+    it('Should throw an error if neither updateattributes nor updatedoc is set', done => {
+      Adapter.update({ multi: true })
+        .then(() => {
+          done(new Error('Should not execute'));
+        }, e => {
+          expect(e instanceof Error).to.be.true;
+          expect(e.message).to.equal('Either updateattributes or updatedoc option must be set in order to execute multi update');
+          done();
+        });
+    });
+  });
 });
 

@@ -260,8 +260,8 @@ const GENERATE_PATCH = function (data) {
   delete data.__v;
   let flattened = flatten(data, { safe: true });
   return function (updateValue) {
-    let value = flatten(updateValue);
-    return Object.assign(value, flattened);
+    let value = flatten(updateValue, { safe: true });
+    updateValue = Object.assign(value, flattened);
   };
 };
 
@@ -318,12 +318,12 @@ const _UPDATE = function (options, cb) {
     let updateOperation = (usePatch) ? GENERATE_PATCH(options.updatedoc) : GENERATE_PUT(options.updatedoc);
     let Model = options.model || this.model;
     Promisie.parallel({
-      update: (!usePatch) ? Model.update(updateOperation) : Model.updateWhere((options.multi && options.query) ? options.query : { _id: options.id }, updateOperation),
+      update: (!usePatch) ? Model.update(updateOperation) : Model.findAndUpdate((options.multi && options.query) ? options.query : { _id: options.id }, updateOperation),
       changes: Promisie.promisify(generateChanges)()
     })
       .then(result => {
         if (options.ensure_changes) cb(null, result);
-        else cb(null, result.update);
+        else cb(null, { status: 'ok' });
       }, cb);
   }
   catch (e) {
@@ -426,8 +426,9 @@ const _DELETE = function (options, cb) {
     let Model = options.model || this.model;
     let deleteid = options.deleteid || options.id;
     if (typeof deleteid !== 'string') throw new Error('Must specify "deleteid" or "id" for delete');
-    let result = Model.findAndRemove({ _id: { $eq: deleteid } });
-    cb(null, 'deleted');
+    let object = Model.findObject({ _id: deleteid });
+    let result = Model.remove(object);
+    cb(null, result);
   }
   catch (e) {
     cb(e);
@@ -493,8 +494,8 @@ const LOKI_ADAPTER = class Loki_Adapter {
     this.fields = options.fields;
     this.pagelength = options.pagelength || 15;
     this.cache = options.cache;
-    this.track_changes = false;//(options.track_changes === false) ? false : true;
-    // this.changeset = (options.db_connection) ? require(path.join(__dirname, '../changeset/index')).loki(this.db_connection) : require(path.join(__dirname, '../changeset/index')).loki_default;
+    this.track_changes = (options.track_changes === false) ? false : true;
+    this.changeset = require(path.join(__dirname, '../changeset/index')).loki_default;
     this.xss_whitelist = options.xss_whitelist || xss_default_whitelist;
     this._useCache = (options.useCache && options.cache) ? true : false;
   }
