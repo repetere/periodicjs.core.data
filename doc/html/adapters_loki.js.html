@@ -1,4 +1,32 @@
-'use strict';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: adapters/loki.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: adapters/loki.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>'use strict';
 const path = require('path');
 const lowkie = require('lowkie');
 const Promisie = require('promisie');
@@ -28,7 +56,7 @@ const _QUERY = function (options, cb) {
       return result;
     }, {});
     let chain = Model.chain()
-      .find((options.query && typeof options.query === 'object') ? options.query : {});
+      .find((options.query &amp;&amp; typeof options.query === 'object') ? options.query : {});
     if (sort) {
       switch (typeof sort) {
         case 'string':
@@ -71,7 +99,7 @@ const _STREAM = function (options, cb) {
       else {
         //Cursor class which extends the Node TransformStream class
         let querystream = new utility.Cursor();
-        for (let i = 0; i < documents.length; i++) {
+        for (let i = 0; i &lt; documents.length; i++) {
           //Becuase of inconsistencies in generator behavior when mixing sync and async operations writes are done as a setImmediate task
           let task = setImmediate(() => {
             if (i === documents.length - 1) querystream.end(documents[i]);
@@ -118,7 +146,7 @@ const _QUERY_WITH_PAGINATION = function (options, cb) {
     skip = (typeof skip === 'number') ? skip : 0;
     Promisie.doWhilst(() => {
       return new Promisie((resolve, reject) => {
-        _QUERY.call(this, { sort, limit: (total + pagelength <= limit) ? pagelength : (limit - total), fields, skip, population, model: Model }, (err, data) => {
+        _QUERY.call(this, { sort, limit: (total + pagelength &lt;= limit) ? pagelength : (limit - total), fields, skip, population, model: Model }, (err, data) => {
           if (err) reject(err);
           else {
             skip += data.length;
@@ -133,7 +161,7 @@ const _QUERY_WITH_PAGINATION = function (options, cb) {
           }
         });
       });
-    }, current => (current === pagelength && total < limit))
+    }, current => (current === pagelength &amp;&amp; total &lt; limit))
       .then(() => cb(null, pages))
       .catch(cb);
   }
@@ -170,7 +198,7 @@ const _SEARCH = function (options, cb) {
     let toplevel = (options.inclusive) ? '$or' : '$and';
     query = { [toplevel]: [] };
     //Pushes options.query if it already a composed query object
-    if (options.query && typeof options.query === 'object') query[toplevel].push(options.query);
+    if (options.query &amp;&amp; typeof options.query === 'object') query[toplevel].push(options.query);
     //Handles options.query if string or number
     else if (typeof options.query === 'string' || typeof options.query === 'number') {
       let values = [];
@@ -179,7 +207,7 @@ const _SEARCH = function (options, cb) {
       else values = options.query.split((typeof options.delimeter === 'string' || options.delimeter instanceof RegExp) ? options.delimeter : '|||');
       let statement = values.reduce((result, value) => {
         let block = { $or: [] };
-        for (let i = 0; i < searchfields.length; i++) {
+        for (let i = 0; i &lt; searchfields.length; i++) {
           block.$or.push({ [searchfields[i]]: value });
         }
         return result.concat(block);
@@ -227,10 +255,10 @@ const _LOAD = function (options, cb) {
     if (typeof query === 'number') {
       query = 2;
       method = 'get';
-    } else if ((sort || fields) && typeof query !== 'number') {
+    } else if ((sort || fields) &amp;&amp; typeof query !== 'number') {
       useQuery = true;
     } else {
-      query = (options.query && typeof options.query === 'object') ? options.query : {
+      query = (options.query &amp;&amp; typeof options.query === 'object') ? options.query : {
         [(utility.isObjectId(options.query)) ? '_id' : (docid || '_id')]: options.query
       };
       method = 'findOne';
@@ -298,7 +326,7 @@ const _UPDATE = function (options, cb) {
     };
     let depopulate = (options.depopulate === false) ? false : true;
     let generateChanges = (callback) => {
-      if (!options.track_changes || (options.track_changes && !options.ensure_changes)) callback();
+      if (!options.track_changes || (options.track_changes &amp;&amp; !options.ensure_changes)) callback();
       if (options.track_changes) {
         let changeset = (!options.isPatch) ? utility.diff(changesetData.original, changesetData.update, depopulate) : options.updatedoc;
         this.changeset.create({
@@ -379,8 +407,8 @@ const _UPDATE_ALL = function (options, cb) {
     let Model = options.model || this.model;
     let query = options.query || options.updatequery;
     let doc;
-    if (options.updateattributes && typeof options.updateattributes === 'object') doc = options.updateattributes;
-    else if (options.updatedoc && typeof options.updatedoc === 'object') doc = options.updatedoc;
+    if (options.updateattributes &amp;&amp; typeof options.updateattributes === 'object') doc = options.updateattributes;
+    else if (options.updatedoc &amp;&amp; typeof options.updatedoc === 'object') doc = options.updatedoc;
     else throw new Error('Either updateattributes or updatedoc option must be set in order to execute multi update');
     _UPDATE.call(this, { query, isPatch: true, multi: true, updatedoc: doc }, cb);
   }
@@ -405,7 +433,7 @@ const _CREATE = function (options, cb) {
     let Model = options.model || this.model;
     let newdoc = options.newdoc || options;
     let xss_whitelist = (options.xss_whitelist) ? options.xss_whitelist : this.xss_whitelist;
-    if (Array.isArray(newdoc) && options.bulk_create) {
+    if (Array.isArray(newdoc) &amp;&amp; options.bulk_create) {
       newdoc = newdoc.map(doc => utility.enforceXSSRules(doc, xss_whitelist, options));
       Promisie.map(newdoc, Model.insert.bind(Model))
         .map(result => result[0])
@@ -506,7 +534,7 @@ const LOKI_ADAPTER = class Loki_Adapter {
     this.track_changes = (options.track_changes === false) ? false : true;
     this.changeset = require(path.join(__dirname, '../changeset/index')).loki_default;
     this.xss_whitelist = options.xss_whitelist || xss_default_whitelist;
-    this._useCache = (options.useCache && options.cache) ? true : false;
+    this._useCache = (options.useCache &amp;&amp; options.cache) ? true : false;
   }
   /**
    * Query method for adapter see _QUERY and _QUERY_WITH_PAGINATION for more details
@@ -516,7 +544,7 @@ const LOKI_ADAPTER = class Loki_Adapter {
    * @return {Object}          Returns a Promise when cb argument is not passed
    */
   query (options = {}, cb = false) {
-    let _query = (options && options.paginate) ? _QUERY_WITH_PAGINATION.bind(this) : _QUERY.bind(this);
+    let _query = (options &amp;&amp; options.paginate) ? _QUERY_WITH_PAGINATION.bind(this) : _QUERY.bind(this);
     if (typeof cb === 'function') _query(options, cb);
     else return Promisie.promisify(_query)(options);
   }
@@ -592,3 +620,26 @@ const LOKI_ADAPTER = class Loki_Adapter {
 };
 
 module.exports = LOKI_ADAPTER;
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="CURSOR.html">CURSOR</a></li><li><a href="DB_ADAPTER_INTERFACE.html">DB_ADAPTER_INTERFACE</a></li><li><a href="LOKI_ADAPTER.html">LOKI_ADAPTER</a></li><li><a href="MONGO_ADAPTER.html">MONGO_ADAPTER</a></li><li><a href="SQL_ADAPTER.html">SQL_ADAPTER</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_CREATE">_CREATE</a></li><li><a href="global.html#_DELETE">_DELETE</a></li><li><a href="global.html#_DELETED">_DELETED</a></li><li><a href="global.html#_LOAD">_LOAD</a></li><li><a href="global.html#_QUERY">_QUERY</a></li><li><a href="global.html#_QUERY_WITH_PAGINATION">_QUERY_WITH_PAGINATION</a></li><li><a href="global.html#_RAW">_RAW</a></li><li><a href="global.html#_SEARCH">_SEARCH</a></li><li><a href="global.html#_STREAM">_STREAM</a></li><li><a href="global.html#_UPDATE">_UPDATE</a></li><li><a href="global.html#_UPDATE_ALL">_UPDATE_ALL</a></li><li><a href="global.html#_UPDATED">_UPDATED</a></li><li><a href="global.html#defaultError">defaultError</a></li><li><a href="global.html#defaultSuccess">defaultSuccess</a></li><li><a href="global.html#EXAMPLE">EXAMPLE</a></li><li><a href="global.html#GENERATE_PATCH">GENERATE_PATCH</a></li><li><a href="global.html#GENERATE_PUT">GENERATE_PUT</a></li><li><a href="global.html#GENERATE_SELECT">GENERATE_SELECT</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Fri Apr 07 2017 09:04:28 GMT-0400 (EDT)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

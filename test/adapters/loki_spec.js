@@ -119,34 +119,34 @@ describe('Loki adapter testing', function () {
         done();
       });
     });
-    // it('Should be able to batch create documents if bulk_create options is true', done => {
-    //   let newdoc = [{
-    //     contact: {
-    //       first_name: 'Fizz',
-    //       last_name: 'Buzz',
-    //       dob: moment('01/06/1990', 'MM/DD/YYYY').format()
-    //     }
-    //   }, {
-    //     contact: {
-    //       first_name: 'Foo',
-    //       last_name: 'Bar',
-    //       dob: moment('01/07/1990', 'MM/DD/YYYY').format()
-    //     }
-    //   }, {
-    //     contact: {
-    //       first_name: 'Alice',
-    //       last_name: 'Bob',
-    //       dob: moment('01/08/1990', 'MM/DD/YYYY').format()
-    //     }
-    //   }];
-    //   Adapter.create({ newdoc, bulk_create: true })
-    //     .try(result => {
-    //       expect(result).to.be.an('array');
-    //       expect(result.filter(data => data._id).length).to.equal(3);
-    //       done();
-    //     })
-    //     .catch(done);
-    // });
+    it('Should be able to batch create documents if bulk_create options is true', done => {
+      let newdoc = [{
+        contact: {
+          first_name: 'Fizz',
+          last_name: 'Buzz',
+          dob: moment('01/06/1990', 'MM/DD/YYYY').format()
+        }
+      }, {
+        contact: {
+          first_name: 'Foo',
+          last_name: 'Bar',
+          dob: moment('01/07/1990', 'MM/DD/YYYY').format()
+        }
+      }, {
+        contact: {
+          first_name: 'Alice',
+          last_name: 'Bob',
+          dob: moment('01/08/1990', 'MM/DD/YYYY').format()
+        }
+      }];
+      Adapter.create({ newdoc, bulk_create: true })
+        .try(result => {
+          expect(result).to.be.an('array');
+          expect(result.filter(data => data._id).length).to.equal(3);
+          done();
+        })
+        .catch(done);
+    });
   });
   describe('Adapter .query method testing', () => {
     let query = {
@@ -491,7 +491,7 @@ describe('Loki adapter testing', function () {
       Adapter.update({ 
         query: {},
         multi: true,
-        updateattributes: { $set: { 'contact.first_name': 'SameFirstName' } }
+        updateattributes: { 'contact.first_name': 'SameFirstName' }
       })
         .then(Adapter.query.bind(Adapter))
         .try(result => {
