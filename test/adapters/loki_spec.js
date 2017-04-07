@@ -31,15 +31,6 @@ describe('Loki adapter testing', function () {
         done();
       }, done);
   });
-  after(done => {
-    fs.readdirAsync(path.join(__dirname, '../examples'))
-      .map(filename => {
-        if (/sampledb/.test(filename)) return fs.unlinkAsync(path.join(__dirname, '../examples', filename));
-        else return 'skipping';
-      })
-      .then(() => done())
-      .catch(done);
-  });
   describe('Basic adapter testing', () => {
     before(() => {
       Adapter = AdapterInterface.create({ adapter: 'loki', model: Example });
