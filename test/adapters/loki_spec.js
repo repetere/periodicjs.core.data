@@ -13,12 +13,17 @@ var Example;
 var db;
 var connectDB = function () {
   return new Promisie((resolve, reject) => {
-    lowkie.connect(path.join(__dirname, '../examples/sampledb.json'))
+    fs.readdirAsync(path.join(__dirname, '../examples'))
+      .map(filename => {
+        if (/sampledb/.test(filename)) return fs.unlinkAsync(path.join(__dirname, '../examples', filename));
+        else return 'skipping';
+      })
+      .then(() => lowkie.connect(path.join(__dirname, '../examples/sampledb.json')))
       .then(connection => {
         db = connection;
         resolve(db);
       })
-      .catch(db);
+      .catch(reject);
   });
 };
 
@@ -30,6 +35,15 @@ describe('Loki adapter testing', function () {
         Example = lowkie.model('Example', ExampleSchema);
         done();
       }, done);
+  });
+  after(done => {
+    fs.readdirAsync(path.join(__dirname, '../examples'))
+      .map(filename => {
+        if (/sampledb/.test(filename)) return fs.unlinkAsync(path.join(__dirname, '../examples', filename));
+        else return 'skipping';
+      })
+      .then(() => done())
+      .catch(done);
   });
   describe('Basic adapter testing', () => {
     before(() => {
