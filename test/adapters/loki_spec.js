@@ -281,11 +281,11 @@ describe('Loki adapter testing', function () {
         }, done);
     });
     it('Should be able to handle queries on docid', done => {
-      Adapter.load({ docid: 'contact.last_name', query: 'World' })
+      Adapter.load({ docid: 'contact.last_name', query: 'Buzz' })
         .try(result => {
           expect(result).to.be.an('object');
           expect(result).to.have.property('contact');
-          expect(result.contact.last_name).to.equal('World');
+          expect(result.contact.last_name).to.equal('Buzz');
           //expect(result.toObject()).to.have.property('createdat');
           done();
         })
@@ -301,7 +301,7 @@ describe('Loki adapter testing', function () {
         })
         .catch(done);
     });
-    it('Should query on _id even if docid is passed if value query is a valid mongo id', done => {
+    it('Should query on _id even if docid is passed if value query is a valid id', done => {
       Adapter.load({ docid: 'contact.last_name', query: example._id })
         .try(result => {
           expect(result).to.be.an('object');

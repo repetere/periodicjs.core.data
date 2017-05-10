@@ -230,12 +230,12 @@ const _LOAD = function (options, cb) {
     } else if ((sort || fields) && typeof query !== 'number') {
       useQuery = true;
     } else {
-      query = (options.query && typeof options.query === 'object') ? options.query : {
-        [(utility.isObjectId(options.query)) ? '_id' : (docid || '_id')]: options.query
-      };
       method = 'findOne';
     }
-    if (useQuery) _QUERY.call(this, Object.assign(options, { limit: 1 }), (err, result) => {
+    query = (options.query && typeof options.query === 'object') ? options.query : {
+      [(utility.isObjectId(options.query)) ? '_id' : (docid || '_id')] : options.query
+    };
+    if (useQuery) _QUERY.call(this, Object.assign(options, { limit: 1, query }), (err, result) => {
       if (err) cb(err);
       else cb(null, result.slice(0, 1)[0]);
     });

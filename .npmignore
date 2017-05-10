@@ -40,5 +40,5 @@ content/extensions/node_modules/periodicjs.ext.dbseed/node_modules
 content/extensions/node_modules/periodicjs.ext.default_routes/node_modules
 content/extensions/node_modules/periodicjs.ext.login/node_modules
 content/extensions/node_modules/periodicjs.ext.mailer/node_modules
-test/adapters/sampledb.json
-test/adapters/sampledb.json.0
+test/examples/sampledb.json
+test/examples/sampledb.json.0

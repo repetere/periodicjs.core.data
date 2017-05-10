@@ -8,6 +8,5 @@
 module.exports = function isObjectId (value) {
 	if (!value) return false;
 	value = (typeof value === 'string') ? value : value.toString();
-	if (value.length > 24) return false;
-	return /^[0-9a-fA-F]{24}$/.test(value);
+	return /^[0-9a-fA-F]{24,32}$/.test(value);
 };
