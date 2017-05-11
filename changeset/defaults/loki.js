@@ -41,7 +41,7 @@ module.exports = (function register_changeset (Loki_Adapter) {
     ChangeSet = lowkie.model('Changeset', CHANGESET);
   }
   catch (e) {
-    ChangeSet = lowkie.model('Changeset');
+    // ChangeSet = lowkie.model('Changeset');
   }
   let Changes = new Loki_Adapter({
     model: ChangeSet,

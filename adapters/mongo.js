@@ -288,7 +288,9 @@ const _UPDATE = function (options, cb) {
     };
     let usePatch = options.isPatch;
     let xss_whitelist = (options.xss_whitelist) ? options.xss_whitelist : this.xss_whitelist;
+    let originalId = options.updatedoc._id;
     options.updatedoc = (depopulate) ? utility.depopulate(options.updatedoc) : options.updatedoc;
+    options.updatedoc._id = originalId;
     options.updatedoc = utility.enforceXSSRules(options.updatedoc, xss_whitelist, options);
     let updateOperation = (usePatch) ? GENERATE_PATCH(options.updatedoc) : GENERATE_PUT(options.updatedoc);
     let Model = options.model || this.model;
