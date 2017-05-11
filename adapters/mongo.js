@@ -266,6 +266,9 @@ const GENERATE_PUT = function (data) {
 const _UPDATE = function (options, cb) {
   try {
     options.track_changes = (typeof options.track_changes === 'boolean') ? options.track_changes : this.track_changes;
+    if (!options.id) {
+      options.id = options.updatedoc._id;
+    }
     let changesetData = {
       update: Object.assign({}, options.updatedoc),
       original: Object.assign({}, options.originalrevision)
