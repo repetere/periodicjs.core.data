@@ -16,7 +16,7 @@ const GENERATE_SELECT = function (fields) {
   return Object.keys(fields).reduce((result, key) => {
     if (fields[key]) {
       if (typeof fields[key] !== 'string') result.push(key);
-      else result.push([key, fields[key]]);
+      else result.push([key, fields[key],]);
     }
     return result;
   }, []);
@@ -38,12 +38,12 @@ const _QUERY = function (options, cb) {
   try {
     let Model = options.model || this.model;
     //Iteratively checks if value was passed in options argument and conditionally assigns the default value if not passed in options
-    let { sort, limit, population, fields, skip } = ['sort','limit','population','fields','skip'].reduce((result, key) => {
+    let { sort, limit, population, fields, skip, } = ['sort', 'limit', 'population', 'fields', 'skip',].reduce((result, key) => {
       result[key] = options[key] || this[key];
       return result;
     }, {});
     let queryOptions = {
-      where: (options.query && typeof options.query === 'object') ? options.query : {}
+      where: (options.query && typeof options.query === 'object') ? options.query : {},
     };
     if (Object.keys(queryOptions.where).length === 0) delete queryOptions.where;
     if (fields) queryOptions.attributes = GENERATE_SELECT(fields);
@@ -57,8 +57,7 @@ const _QUERY = function (options, cb) {
     Model.findAll(queryOptions)
       .then(result => cb(null, result))
       .catch(cb);
-  }
-  catch (e) {
+  }  catch (e) {
     cb(e);
   }
 };
@@ -93,8 +92,7 @@ const _STREAM = function (options, cb) {
         cb(null, querystream);
       }
     });
-  }
-  catch (e) {
+  }  catch (e) {
     cb(e);
   }
 };
@@ -116,20 +114,20 @@ const _QUERY_WITH_PAGINATION = function (options, cb) {
   try {
     let Model = options.model || this.model;
     //Iteratively checks if value was passed in options argument and conditionally assigns the default value if not passed in options
-    let { sort, limit, population, fields, skip, pagelength } = ['sort','limit','population','fields','skip','pagelength'].reduce((result, key) => {
+    let { sort, limit, population, fields, skip, pagelength, } = ['sort', 'limit', 'population', 'fields', 'skip', 'pagelength',].reduce((result, key) => {
       result[key] = options[key] || this[key];
       return result;
     }, {});
     let pages = {
       total: 0,
-      total_pages: 0
+      total_pages: 0,
     };
     let total = 0;
     let index = 0;
     skip = (typeof skip === 'number') ? skip : 0;
     Promisie.doWhilst(() => {
       return new Promisie((resolve, reject) => {
-        _QUERY.call(this, { sort, limit: (total + pagelength <= limit) ? pagelength : (limit - total), fields, skip, population, model: Model }, (err, data) => {
+        _QUERY.call(this, { sort, limit: (total + pagelength <= limit) ? pagelength : (limit - total), fields, skip, population, model: Model, }, (err, data) => {
           if (err) reject(err);
           else {
             skip += data.length;
@@ -147,8 +145,7 @@ const _QUERY_WITH_PAGINATION = function (options, cb) {
     }, current => (current === pagelength && total < limit))
       .then(() => cb(null, pages))
       .catch(cb);
-  }
-  catch (e) {
+  }  catch (e) {
     cb(e);
   }
 };
@@ -179,7 +176,7 @@ const _SEARCH = function (options, cb) {
     else if (typeof options.search === 'string') searchfields = options.search.split(',');
     else searchfields = this.searchfields;
     let toplevel = (options.inclusive) ? '$or' : '$and';
-    query = { [toplevel]: [] };
+    query = { [toplevel]: [], };
     //Pushes options.query if it already a composed query object
     if (options.query && typeof options.query === 'object') query[toplevel].push(options.query);
     //Handles options.query if string or number
@@ -189,26 +186,25 @@ const _SEARCH = function (options, cb) {
       //Tries to split on delimeter and generate query from options.query string
       else values = options.query.split((typeof options.delimeter === 'string' || options.delimeter instanceof RegExp) ? options.delimeter : '|||');
       let statement = values.reduce((result, value) => {
-        let block = { $or: [] };
+        let block = { $or: [], };
         for (let i = 0; i < searchfields.length; i++) {
-          block.$or.push({ [searchfields[i]]: value });
+          block.$or.push({ [searchfields[i]]: value, });
         }
         return result.concat(block);
       }, []);
-      query[toplevel].push({ $or: statement });
+      query[toplevel].push({ $or: statement, });
     }
     //Handles docnamelookup portion of query
     if (typeof options.values === 'string') {
       let split = options.values.split(',');
       let isObjectIds = (split.filter(utility.isObjectId).length === split.length);
-      if (isObjectIds) query[toplevel].push({ 'id': { $in: split } });
-      else query[toplevel].push({ [(options.docid || this.docid) ? (options.docid || this.docid) : 'id']: { $in: split } });
+      if (isObjectIds) query[toplevel].push({ 'id': { $in: split, }, });
+      else query[toplevel].push({ [(options.docid || this.docid) ? (options.docid || this.docid) : 'id']: { $in: split, }, });
     }
     options.query = query;
     if (options.paginate) _QUERY_WITH_PAGINATION.call(this, options, cb);
     else _QUERY.call(this, options, cb);
-  }
-  catch (e) {
+  }  catch (e) {
     cb(e);
   }
 };
@@ -228,17 +224,17 @@ const _LOAD = function (options, cb) {
   try {
     let Model = options.model || this.model;
     //Iteratively checks if value was passed in options argument and conditionally assigns the default value if not passed in options
-    let { sort, population, fields, docid } = ['sort','population','fields','docid'].reduce((result, key) => {
+    let { sort, population, fields, docid, } = ['sort', 'population', 'fields', 'docid',].reduce((result, key) => {
       result[key] = options[key] || this[key];
       return result;
     }, {});
     let query = (options.query && typeof options.query === 'object') ? options.query : {
       $or: [{
-        [docid || 'id']: options.query
-      }]
+        [docid || 'id']: options.query,
+      },],
     };
     let queryOptions = {
-      where: query
+      where: query,
     };
     if (fields) queryOptions.attributes = GENERATE_SELECT(fields);
     if (sort) queryOptions.order = sort;
@@ -249,8 +245,7 @@ const _LOAD = function (options, cb) {
     Model.findOne(queryOptions)
       .then(result => cb(null, result))
       .catch(cb);
-  }
-  catch (e) {
+  }  catch (e) {
     cb(e);
   }
 };
@@ -271,9 +266,12 @@ const _LOAD = function (options, cb) {
 const _UPDATE = function (options, cb) {
   try {
     options.track_changes = (typeof options.track_changes === 'boolean') ? options.track_changes : this.track_changes;
+    if (!options.id) {
+      options.id = options.updatedoc._id || options.updatedoc.id;
+    }
     let changesetData = {
       update: Object.assign({}, options.updatedoc),
-      original: Object.assign({}, options.originalrevision)
+      original: Object.assign({}, options.originalrevision),
     };
     let generateChanges = (callback) => {
       if (!options.track_changes || (options.track_changes && !options.ensure_changes)) callback();
@@ -289,7 +287,7 @@ const _UPDATE = function (options, cb) {
                 parent_document_id: options.id,
                 field_name: key,
                 original: (changeset[key].length > 1) ? changeset[key][0] : 'new value',
-                update: (changeset[key].length < 2) ? changeset[0] : ((changeset[key].length === 2) ? changeset[key][1] : 'deleted value')
+                update: (changeset[key].length < 2) ? changeset[0] : ((changeset[key].length === 2) ? changeset[key][1] : 'deleted value'),
               });
             });
           })
@@ -305,25 +303,24 @@ const _UPDATE = function (options, cb) {
     let Model = options.model || this.model;
     let where = {
       $or: [{
-        [options.docid || this.docid]: options.id
-      }]
+        [options.docid || this.docid]: options.id,
+      },],
     };
     Promisie.parallel({
       update: Model.update(options.updatedoc, (options.query && typeof options.query === 'object') ? {
         limit: 1,
-        where: options.query
+        where: options.query,
       } : {
         where,
-        limit: 1
+        limit: 1,
       }),
-      changes: Promisie.promisify(generateChanges)()
+      changes: Promisie.promisify(generateChanges)(),
     })
       .then(result => {
         if (options.ensure_changes) cb(null, result);
         else cb(null, result.update);
       }, cb);
-  }
-  catch (e) {
+  }  catch (e) {
     cb(e);
   }
 };
@@ -346,10 +343,9 @@ const _UPDATED = function (options, cb) {
     if (!options.id) throw new Error('Can\'t retrieve document after update if options.id is not defined');
     _UPDATE.call(this, options, (err) => {
       if (err) cb(err);
-      else _LOAD.call(this, { model: options.model, query: options.id }, cb);
+      else _LOAD.call(this, { model: options.model, query: options.id, }, cb);
     });
-  }
-  catch (e) {
+  }  catch (e) {
     cb(e);
   }
 };
@@ -373,8 +369,7 @@ const _UPDATE_ALL = function (options, cb) {
     Model.update(update, query)
       .then(result => cb(null, result))
       .catch(cb);
-  }
-  catch (e) {
+  }  catch (e) {
     cb(e);
   }
 };
@@ -400,14 +395,12 @@ const _CREATE = function (options, cb) {
       Model.bulkCreate(newdoc)
         .then(result => cb(null, result))
         .catch(cb);
-    }
-    else {
+    }    else {
       Model.create(utility.enforceXSSRules(newdoc, xss_whitelist, (options.newdoc) ? options : undefined))
         .then(result => cb(null, result))
         .catch(cb);
     }
-  }
-  catch (e) {
+  }  catch (e) {
     cb(e);
   }
 };
@@ -428,17 +421,16 @@ const _DELETE = function (options, cb) {
     if (typeof deleteid !== 'string' && typeof deleteid !== 'number') throw new Error('Must specify "deleteid" or "id" for delete');
     Model.destroy({
       where: [{
-        id: deleteid
+        id: deleteid,
       }, {
-        [options.docid || this.docid]: deleteid
-      }],
+        [options.docid || this.docid]: deleteid,
+      },],
       force: options.force,
-      limit: 1
+      limit: 1,
     })
       .then(result => cb(null, result))
       .catch(cb);
-  }
-  catch (e) {
+  }  catch (e) {
     cb(e);
   }
 };
@@ -453,7 +445,7 @@ const _DELETE = function (options, cb) {
  */
 const _DELETED = function (options, cb) {
   try {
-    _LOAD.call(this, { model: options.model, query: options.deleteid || options.id }, (err1, loaded) => {
+    _LOAD.call(this, { model: options.model, query: options.deleteid || options.id, }, (err1, loaded) => {
       if (err1) cb(err1);
       else {
         _DELETE.call(this, options, (err2) => {
@@ -462,8 +454,7 @@ const _DELETED = function (options, cb) {
         });
       }
     });
-  }
-  catch (e) {
+  }  catch (e) {
     cb(e);
   }
 };
@@ -487,11 +478,10 @@ const _RAW = function (options, cb) {
     if (options.format_result !== false) {
       type = (options.format_result && (typeof options.format_result === 'string')) ? options.format_result : Sequelize.QueryTypes[query.replace(/^(\w+)\s+.+$/, '$1')];
     }
-    this.db_connection.query(query, { type, model: Model })
+    this.db_connection.query(query, { type, model: Model, })
       .then(result => cb(null, result))
       .catch(cb);
-  }
-  catch (e) {
+  }  catch (e) {
     cb(e);
   }
 };
@@ -526,9 +516,8 @@ const SQL_ADAPTER = class SQL_Adapter {
       else if (Array.isArray(options.db_connection)) {
         let connectionOptions = options.db_connection;
         this.db_connection = new Sequelize(...connectionOptions);
-      }
-      else if (options.db_connection.db_name && options.db_connection.db_user && options.db_connection.db_password) {
-        let { db_name, db_user, db_password, db_options } = options.db_connection;
+      }      else if (options.db_connection.db_name && options.db_connection.db_user && options.db_connection.db_password) {
+        let { db_name, db_user, db_password, db_options, } = options.db_connection;
         this.db_connection = new Sequelize(db_name, db_user, db_password, db_options);
       }
     }
@@ -537,8 +526,7 @@ const SQL_ADAPTER = class SQL_Adapter {
     if (options.model && typeof options.model === 'object') {
       if (Array.isArray(options.model)) this.model = this.db_connection.define(...options.model);
       else this.model = options.model;
-    }
-    else this.model = this.db_connection.models[options.model];
+    }    else this.model = this.db_connection.models[options.model];
     this.sort = options.sort || 'createdat DESC';
     this.limit = options.limit || 500;
     this.skip = options.skip || 0;
@@ -570,14 +558,13 @@ const SQL_ADAPTER = class SQL_Adapter {
             if (this.changeset && !this.changeset[IS_SYNCED]) {
               Object.defineProperty(this.changeset, IS_SYNCED, {
                 value: true,
-                enumerable: false
+                enumerable: false,
               });
             }
-            callback(null, { status: 'ok' });
+            callback(null, { status: 'ok', });
           })
           .catch(callback);
-      }
-      catch (e) {
+      }      catch (e) {
         callback(e);
       }
     }.bind(this);
