@@ -45,9 +45,12 @@ const _QUERY = function(options, cb) {
     let queryOptions = {
       where: (options.query && typeof options.query === 'object') ? options.query : {},
     };
+
     if (Object.keys(queryOptions.where).length === 0) delete queryOptions.where;
     if (fields) queryOptions.attributes = GENERATE_SELECT(fields);
-    if (sort) queryOptions.order = sort;
+    if (sort) queryOptions.order = (Array.isArray(sort) === false) ?
+      convertSortObjToOrderArray(sort) :
+      sort;
     if (skip) queryOptions.offset = skip;
     if (limit) queryOptions.limit = limit;
     if (population) {
@@ -63,12 +66,45 @@ const _QUERY = function(options, cb) {
   }
 };
 
+/**
+ * converts mongo-like sort property to sequelize order value
+ * 
+ * @param {any} sortVal 
+ * @returns {String} [ASC|DESC]
+ */
+function getOrderFromSortObj(sortVal) {
+  if (sortVal >= 0) return 'ASC';
+  else if (sortVal < 0) return 'DESC';
+  else return 'ASC';
+}
+/**
+ * this converts a mongo like sort object to a sequelize order argument. { date:1, title:1} => [ ['date','ASC'], ['title','ASC'] ]
+ * 
+ * @param {Object} sort mongo like sort argument 
+ * @returns {Array} order argument
+ */
+function convertSortObjToOrderArray(sort) {
+  return Object.keys(sort).map(key => [key, getOrderFromSortObj(sort[key]), ]);
+}
+
+/**
+ * returns plain json object instead of sequelize row instance
+ * 
+ * @param {Object} result 
+ * @returns {Object}
+ */
 function getPlainResult(result) {
   return (result && typeof result.get === 'function') ?
-    result.get({ plain: true }) :
+    result.get({ plain: true, }) :
     result;
 }
 
+/**
+ * returns rows of sequelize instances to plain objects
+ * 
+ * @param {any} results 
+ * @returns 
+ */
 function getJSONResults(results) {
   return (results && results.length) ?
     results.map(getPlainResult) :
@@ -146,24 +182,24 @@ const _QUERY_WITH_PAGINATION = function(options, cb) {
     let index = 0;
     skip = (typeof skip === 'number') ? skip : 0;
     Promisie.doWhilst(() => {
-        return new Promisie((resolve, reject) => {
-          _QUERY.call(this, { sort, limit: (total + pagelength <= limit) ? pagelength : (limit - total), fields, skip, population, model: Model, }, (err, data) => {
-            if (err) reject(err);
-            else {
-              skip += data.length;
-              total += data.length;
-              pages.total += data.length;
-              pages.total_pages++;
-              pages[index++] = {
+      return new Promisie((resolve, reject) => {
+        _QUERY.call(this, { sort, limit: (total + pagelength <= limit) ? pagelength : (limit - total), fields, skip, population, model: Model, }, (err, data) => {
+          if (err) reject(err);
+          else {
+            skip += data.length;
+            total += data.length;
+            pages.total += data.length;
+            pages.total_pages++;
+            pages[index++] = {
                 documents: (this.jsonify_results) ?
                   getJSONResults(data) : data,
                 count: data.length,
               };
-              resolve(data.length);
-            }
-          });
+            resolve(data.length);
+          }
         });
-      }, current => (current === pagelength && total < limit))
+      });
+    }, current => (current === pagelength && total < limit))
       .then(() => cb(null, pages))
       .catch(cb);
   } catch (e) {
@@ -311,15 +347,15 @@ const _UPDATE = function(options, cb) {
           return this.sync();
         })()
         .then(() => {
-            return Promisie.map(Object.keys(changeset), (key) => {
-              return this.changeset.create({
-                parent_document_id: options.id,
-                field_name: key,
-                original: (changeset[key].length > 1) ? changeset[key][0] : 'new value',
-                update: (changeset[key].length < 2) ? changeset[0] : ((changeset[key].length === 2) ? changeset[key][1] : 'deleted value'),
-              });
+          return Promisie.map(Object.keys(changeset), (key) => {
+            return this.changeset.create({
+              parent_document_id: options.id,
+              field_name: key,
+              original: (changeset[key].length > 1) ? changeset[key][0] : 'new value',
+              update: (changeset[key].length < 2) ? changeset[0] : ((changeset[key].length === 2) ? changeset[key][1] : 'deleted value'),
             });
-          })
+          });
+        })
           .then(result => {
             if (options.ensure_changes) callback(null, (this.jsonify_results) ?
               getPlainResult(result) :
@@ -338,15 +374,15 @@ const _UPDATE = function(options, cb) {
       }, ],
     };
     Promisie.parallel({
-        update: Model.update(options.updatedoc, (options.query && typeof options.query === 'object') ? {
-          limit: 1,
-          where: options.query,
-        } : {
-          where,
-          limit: 1,
-        }),
-        changes: Promisie.promisify(generateChanges)(),
-      })
+      update: Model.update(options.updatedoc, (options.query && typeof options.query === 'object') ? {
+        limit: 1,
+        where: options.query,
+      } : {
+        where,
+        limit: 1,
+      }),
+      changes: Promisie.promisify(generateChanges)(),
+    })
       .then(result => {
         if (options.ensure_changes) cb(null, result);
         else cb(null, result.update);
@@ -451,14 +487,14 @@ const _DELETE = function(options, cb) {
     let deleteid = options.deleteid || options.id;
     if (typeof deleteid !== 'string' && typeof deleteid !== 'number') throw new Error('Must specify "deleteid" or "id" for delete');
     Model.destroy({
-        where: [{
-          id: deleteid,
-        }, {
-          [options.docid || this.docid]: deleteid,
-        }, ],
-        force: options.force,
-        limit: 1,
-      })
+      where: [{
+        id: deleteid,
+      }, {
+        [options.docid || this.docid]: deleteid,
+      }, ],
+      force: options.force,
+      limit: 1,
+    })
       .then(result => cb(null, result))
       .catch(cb);
   } catch (e) {
@@ -542,38 +578,38 @@ const SQL_ADAPTER = class SQL_Adapter {
    * @param {string[]} [options.xss_whitelist=false] Configuration for XSS whitelist package. If false XSS whitelisting will be ignored
    */
   constructor(options = {}) {
-      if (options.db_connection && typeof options.db_connection === 'object') {
-        if (options.db_connection.models && options.db_connection.define) this.db_connection = options.db_connection;
-        else if (Array.isArray(options.db_connection)) {
-          let connectionOptions = options.db_connection;
-          this.db_connection = new Sequelize(...connectionOptions);
-        } else if (options.db_connection.db_name && options.db_connection.db_user && options.db_connection.db_password) {
-          let { db_name, db_user, db_password, db_options, } = options.db_connection;
-          this.db_connection = new Sequelize(db_name, db_user, db_password, db_options);
-        }
+    if (options.db_connection && typeof options.db_connection === 'object') {
+      if (options.db_connection.models && options.db_connection.define) this.db_connection = options.db_connection;
+      else if (Array.isArray(options.db_connection)) {
+        let connectionOptions = options.db_connection;
+        this.db_connection = new Sequelize(...connectionOptions);
+      } else if (options.db_connection.db_name && options.db_connection.db_user && options.db_connection.db_password) {
+        let { db_name, db_user, db_password, db_options, } = options.db_connection;
+        this.db_connection = new Sequelize(db_name, db_user, db_password, db_options);
       }
-      this.db_connection = (options.db_connection && typeof options.db_connection === 'object' && options.db_connection.models && options.db_connection.define) ? options.db_connection : new Sequelize(options.db_connection);
-      this.docid = options.docid || 'id';
-      this.jsonify_results = (typeof options.jsonify_results === 'boolean') ? options.jsonify_results : true;
-      if (options.model && typeof options.model === 'object') {
-        if (Array.isArray(options.model)) this.model = this.db_connection.define(...options.model);
-        else this.model = options.model;
-      } else this.model = this.db_connection.models[options.model];
-      this.sort = options.sort || 'createdat DESC';
-      this.limit = options.limit || 500;
-      this.skip = options.skip || 0;
-      if (Array.isArray(options.search)) this.searchfields = options.search;
-      else if (typeof options.search === 'string') this.searchfields = options.search.split(',');
-      else this.searchfields = [];
-      this.population = options.population || [];
-      this.fields = options.fields;
-      this.pagelength = options.pagelength || 15;
-      this.cache = options.cache;
-      this.changeset = (options.db_connection) ? require(path.join(__dirname, '../changeset/index')).sql(this.db_connection) : false;
-      this.track_changes = (options.track_changes === false || this.changeset === false) ? false : true;
-      this.xss_whitelist = options.xss_whitelist || xss_default_whitelist;
-      this._useCache = (options.useCache && options.cache) ? true : false;
     }
+    this.db_connection = (options.db_connection && typeof options.db_connection === 'object' && options.db_connection.models && options.db_connection.define) ? options.db_connection : new Sequelize(options.db_connection);
+    this.docid = options.docid || 'id';
+    this.jsonify_results = (typeof options.jsonify_results === 'boolean') ? options.jsonify_results : true;
+    if (options.model && typeof options.model === 'object') {
+      if (Array.isArray(options.model)) this.model = this.db_connection.define(...options.model);
+      else this.model = options.model;
+    } else this.model = this.db_connection.models[options.model];
+    this.sort = options.sort || 'createdat DESC';
+    this.limit = options.limit || 500;
+    this.skip = options.skip || 0;
+    if (Array.isArray(options.search)) this.searchfields = options.search;
+    else if (typeof options.search === 'string') this.searchfields = options.search.split(',');
+    else this.searchfields = [];
+    this.population = options.population || [];
+    this.fields = options.fields;
+    this.pagelength = options.pagelength || 15;
+    this.cache = options.cache;
+    this.changeset = (options.db_connection) ? require(path.join(__dirname, '../changeset/index')).sql(this.db_connection) : false;
+    this.track_changes = (options.track_changes === false || this.changeset === false) ? false : true;
+    this.xss_whitelist = options.xss_whitelist || xss_default_whitelist;
+    this._useCache = (options.useCache && options.cache) ? true : false;
+  }
     /**
      * Sync defined sequelize models with SQL db
      * @param  {Object}  [options={}] Configurable options for sequelize sync method
@@ -581,10 +617,10 @@ const SQL_ADAPTER = class SQL_Adapter {
      * @return {Object}          Returns a Promise when cb argument is not passed
      */
   sync(options = {}, cb = false) {
-      if (typeof options === 'function') cb = options;
-      let _sync = function(callback) {
-        try {
-          this.db_connection.sync(options)
+    if (typeof options === 'function') cb = options;
+    let _sync = function(callback) {
+      try {
+        this.db_connection.sync(options)
             .then(connection => connection.authenticate())
             .then(() => {
               if (this.changeset && !this.changeset[IS_SYNCED]) {
@@ -596,13 +632,13 @@ const SQL_ADAPTER = class SQL_Adapter {
               callback(null, { status: 'ok', });
             })
             .catch(callback);
-        } catch (e) {
-          callback(e);
-        }
-      }.bind(this);
-      if (typeof cb === 'function') _sync(cb);
-      else return Promisie.promisify(_sync)();
-    }
+      } catch (e) {
+        callback(e);
+      }
+    }.bind(this);
+    if (typeof cb === 'function') _sync(cb);
+    else return Promisie.promisify(_sync)();
+  }
     /**
      * Query method for adapter see _QUERY and _QUERY_WITH_PAGINATION for more details
      * @param  {Object}  [options={}] Configurable options for query
@@ -611,10 +647,10 @@ const SQL_ADAPTER = class SQL_Adapter {
      * @return {Object}          Returns a Promise when cb argument is not passed
      */
   query(options = {}, cb = false) {
-      let _query = (options && options.paginate) ? _QUERY_WITH_PAGINATION.bind(this) : _QUERY.bind(this);
-      if (typeof cb === 'function') _query(options, cb);
-      else return Promisie.promisify(_query)(options);
-    }
+    let _query = (options && options.paginate) ? _QUERY_WITH_PAGINATION.bind(this) : _QUERY.bind(this);
+    if (typeof cb === 'function') _query(options, cb);
+    else return Promisie.promisify(_query)(options);
+  }
     /**
      * Search method for adapter see _SEARCH for more details
      * @param  {Object}  [options={}] Configurable options for query
@@ -622,10 +658,10 @@ const SQL_ADAPTER = class SQL_Adapter {
      * @return {Object}          Returns a Promise when cb argument is not passed
      */
   search(options = {}, cb = false) {
-      let _search = _SEARCH.bind(this);
-      if (typeof cb === 'function') _search(options, cb);
-      else return Promisie.promisify(_search)(options);
-    }
+    let _search = _SEARCH.bind(this);
+    if (typeof cb === 'function') _search(options, cb);
+    else return Promisie.promisify(_search)(options);
+  }
     /**
      * Stream method for adapter see _STREAM for more details
      * @param  {Object}  [options={}] Configurable options for stream
@@ -633,10 +669,10 @@ const SQL_ADAPTER = class SQL_Adapter {
      * @return {Object}          Returns a Promise when cb argument is not passed
      */
   stream(options = {}, cb = false) {
-      let _stream = _STREAM.bind(this);
-      if (typeof cb === 'function') _stream(options, cb);
-      else return Promisie.promisify(_stream)(options);
-    }
+    let _stream = _STREAM.bind(this);
+    if (typeof cb === 'function') _stream(options, cb);
+    else return Promisie.promisify(_stream)(options);
+  }
     /**
      * Load method for adapter see _LOAD for more details
      * @param  {Object}  [options={}] Configurable options for load
@@ -644,10 +680,10 @@ const SQL_ADAPTER = class SQL_Adapter {
      * @return {Object}          Returns a Promise when cb argument is not passed
      */
   load(options = {}, cb = false) {
-      let _load = _LOAD.bind(this);
-      if (typeof cb === 'function') _load(options, cb);
-      else return Promisie.promisify(_load)(options);
-    }
+    let _load = _LOAD.bind(this);
+    if (typeof cb === 'function') _load(options, cb);
+    else return Promisie.promisify(_load)(options);
+  }
     /**
      * Update method for adapter see _UPDATE, _UPDATED and _UPDATE_ALL for more details
      * @param  {Object}  [options={}] Configurable options for update
@@ -657,10 +693,10 @@ const SQL_ADAPTER = class SQL_Adapter {
      * @return {Object}          Returns a Promise when cb argument is not passed
      */
   update(options = {}, cb = false) {
-      let _update = (options.multi) ? _UPDATE_ALL.bind(this) : ((options.return_updated) ? _UPDATED.bind(this) : _UPDATE.bind(this));
-      if (typeof cb === 'function') _update(options, cb);
-      else return Promisie.promisify(_update)(options);
-    }
+    let _update = (options.multi) ? _UPDATE_ALL.bind(this) : ((options.return_updated) ? _UPDATED.bind(this) : _UPDATE.bind(this));
+    if (typeof cb === 'function') _update(options, cb);
+    else return Promisie.promisify(_update)(options);
+  }
     /**
      * Create method for adapter see _CREATE for more details
      * @param  {Object}  [options={}] Configurable options for create
@@ -668,10 +704,10 @@ const SQL_ADAPTER = class SQL_Adapter {
      * @return {Object}          Returns a Promise when cb argument is not passed
      */
   create(options = {}, cb = false) {
-      let _create = _CREATE.bind(this);
-      if (typeof cb === 'function') _create(options, cb);
-      else return Promisie.promisify(_create)(options);
-    }
+    let _create = _CREATE.bind(this);
+    if (typeof cb === 'function') _create(options, cb);
+    else return Promisie.promisify(_create)(options);
+  }
     /**
      * Delete method for adapter see _DELETE and _DELETED for more details
      * @param  {Object}  [options={}] Configurable options for create
@@ -680,10 +716,10 @@ const SQL_ADAPTER = class SQL_Adapter {
      * @return {Object}          Returns a Promise when cb argument is not passed
      */
   delete(options = {}, cb = false) {
-      let _delete = (options.return_deleted) ? _DELETED.bind(this) : _DELETE.bind(this);
-      if (typeof cb === 'function') _delete(options, cb);
-      else return Promisie.promisify(_delete)(options);
-    }
+    let _delete = (options.return_deleted) ? _DELETED.bind(this) : _DELETE.bind(this);
+    if (typeof cb === 'function') _delete(options, cb);
+    else return Promisie.promisify(_delete)(options);
+  }
     /**
      * Raw query method for adapter see _RAW for more details
      * @param  {Object}  options Configurable options for raw query
