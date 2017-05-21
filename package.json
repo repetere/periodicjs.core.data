@@ -47,6 +47,7 @@
     "mocha-lcov-reporter": "^1.2.0",
     "moment": "~2.13.0",
     "mongoose": "~4.4.14",
+    "pg": "^6.2.2",
     "promisie": "^1.6.1",
     "sequelize": "~3.28.0"
   },
@@ -93,6 +94,6 @@
   "scripts": {
     "test": "mocha -R spec --recursive"
   },
-  "version": "0.2.61",
+  "version": "0.3.0",
   "license": "MIT"
 }
