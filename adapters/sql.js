@@ -64,7 +64,7 @@ const _QUERY = function(options, cb) {
 };
 
 function getPlainResult(result) {
-  return (typeof result.get === 'function') ?
+  return (result && typeof result.get === 'function') ?
     result.get({ plain: true }) :
     result;
 }
@@ -156,8 +156,7 @@ const _QUERY_WITH_PAGINATION = function(options, cb) {
               pages.total_pages++;
               pages[index++] = {
                 documents: (this.jsonify_results) ?
-                  getJSONResults(data) :
-                  data,
+                  getJSONResults(data) : data,
                 count: data.length,
               };
               resolve(data.length);
@@ -555,7 +554,7 @@ const SQL_ADAPTER = class SQL_Adapter {
       }
       this.db_connection = (options.db_connection && typeof options.db_connection === 'object' && options.db_connection.models && options.db_connection.define) ? options.db_connection : new Sequelize(options.db_connection);
       this.docid = options.docid || 'id';
-      this.jsonify_results = (typeof options.jsonify_results) ? options.jsonify_results : true;
+      this.jsonify_results = (typeof options.jsonify_results === 'boolean') ? options.jsonify_results : true;
       if (options.model && typeof options.model === 'object') {
         if (Array.isArray(options.model)) this.model = this.db_connection.define(...options.model);
         else this.model = options.model;
