@@ -277,8 +277,8 @@ const _LOAD = function(options, cb) {
  */
 const GENERATE_PATCH = function(data) {
   if (typeof data === 'function') return data;
-  delete data._id;
-  delete data.__v;
+  // delete data._id;
+  // delete data.__v;
   let flattened = flatten(data, { safe: true });
   return function(updateValue) {
     let value = flatten(updateValue, { safe: true });
@@ -292,7 +292,7 @@ const GENERATE_PATCH = function(data) {
  * @return {Object} Returns original object with reserved fields removed
  */
 const GENERATE_PUT = function(data) {
-  delete data.__v;
+  // delete data.__v;
   return data;
 };
 
