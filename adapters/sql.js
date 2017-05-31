@@ -16,7 +16,7 @@ const GENERATE_SELECT = function(fields) {
   return Object.keys(fields).reduce((result, key) => {
     if (fields[key]) {
       if (typeof fields[key] !== 'string') result.push(key);
-      else result.push([key, fields[key], ]);
+      else result.push([key, fields[key],]);
     }
     return result;
   }, []);
@@ -38,7 +38,7 @@ const _QUERY = function(options, cb) {
   try {
     let Model = options.model || this.model;
     //Iteratively checks if value was passed in options argument and conditionally assigns the default value if not passed in options
-    let { sort, limit, population, fields, skip, } = ['sort', 'limit', 'population', 'fields', 'skip', ].reduce((result, key) => {
+    let { sort, limit, population, fields, skip, } = ['sort', 'limit', 'population', 'fields', 'skip',].reduce((result, key) => {
       result[key] = options[key] || this[key];
       return result;
     }, {});
@@ -84,7 +84,7 @@ function getOrderFromSortObj(sortVal) {
  * @returns {Array} order argument
  */
 function convertSortObjToOrderArray(sort) {
-  return Object.keys(sort).map(key => [key, getOrderFromSortObj(sort[key]), ]);
+  return Object.keys(sort).map(key => [key, getOrderFromSortObj(sort[key]),]);
 }
 
 /**
@@ -170,7 +170,7 @@ const _QUERY_WITH_PAGINATION = function(options, cb) {
   try {
     let Model = options.model || this.model;
     //Iteratively checks if value was passed in options argument and conditionally assigns the default value if not passed in options
-    let { sort, limit, population, fields, skip, pagelength, } = ['sort', 'limit', 'population', 'fields', 'skip', 'pagelength', ].reduce((result, key) => {
+    let { sort, limit, population, fields, skip, pagelength, query, } = ['sort', 'limit', 'population', 'fields', 'skip', 'pagelength', 'query',].reduce((result, key) => {
       result[key] = options[key] || this[key];
       return result;
     }, {});
@@ -183,7 +183,7 @@ const _QUERY_WITH_PAGINATION = function(options, cb) {
     skip = (typeof skip === 'number') ? skip : 0;
     Promisie.doWhilst(() => {
       return new Promisie((resolve, reject) => {
-        _QUERY.call(this, { sort, limit: (total + pagelength <= limit) ? pagelength : (limit - total), fields, skip, population, model: Model, }, (err, data) => {
+        _QUERY.call(this, { query, sort, limit: (total + pagelength <= limit) ? pagelength : (limit - total), fields, skip, population, model: Model, }, (err, data) => {
           if (err) reject(err);
           else {
             skip += data.length;
@@ -191,10 +191,10 @@ const _QUERY_WITH_PAGINATION = function(options, cb) {
             pages.total += data.length;
             pages.total_pages++;
             pages[index++] = {
-                documents: (this.jsonify_results) ?
+              documents: (this.jsonify_results) ?
                   getJSONResults(data) : data,
-                count: data.length,
-              };
+              count: data.length,
+            };
             resolve(data.length);
           }
         });
@@ -248,7 +248,7 @@ const _SEARCH = function(options, cb) {
         let block = { $or: [], };
         for (let i = 0; i < searchfields.length; i++) {
           block.$or.push({
-            [searchfields[i]]: value,
+            [searchfields[i]]: { $iLike:`${value}%` ,},
           });
         }
         return result.concat(block);
@@ -287,14 +287,14 @@ const _LOAD = function(options, cb) {
   try {
     let Model = options.model || this.model;
     //Iteratively checks if value was passed in options argument and conditionally assigns the default value if not passed in options
-    let { sort, population, fields, docid, } = ['sort', 'population', 'fields', 'docid', ].reduce((result, key) => {
+    let { sort, population, fields, docid, } = ['sort', 'population', 'fields', 'docid',].reduce((result, key) => {
       result[key] = options[key] || this[key];
       return result;
     }, {});
     let query = (options.query && typeof options.query === 'object') ? options.query : {
       $or: [{
         [docid || 'id']: options.query,
-      }, ],
+      },],
     };
     let queryOptions = {
       where: query,
@@ -371,7 +371,7 @@ const _UPDATE = function(options, cb) {
     let where = {
       $or: [{
         [options.docid || this.docid]: options.id,
-      }, ],
+      },],
     };
     Promisie.parallel({
       update: Model.update(options.updatedoc, (options.query && typeof options.query === 'object') ? {
@@ -491,7 +491,7 @@ const _DELETE = function(options, cb) {
         id: deleteid,
       }, {
         [options.docid || this.docid]: deleteid,
-      }, ],
+      },],
       force: options.force,
       limit: 1,
     })
