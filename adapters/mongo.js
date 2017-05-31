@@ -161,7 +161,9 @@ const _SEARCH = function (options, cb) {
       let statement = values.reduce((result, value) => {
         let block = { $or: [], };
         for (let i = 0; i < searchfields.length; i++) {
-          block.$or.push({ [searchfields[i]]: value, });
+          block.$or.push({
+            [ searchfields[ i ] ]: new RegExp(value, 'gi'),
+          });
         }
         return result.concat(block);
       }, []);
