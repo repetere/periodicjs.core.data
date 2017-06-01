@@ -145,6 +145,7 @@ const _SEARCH = function (options, cb) {
   try {
     let query;
     let searchfields;
+    let docid = options.docid || this.docid;
     if (Array.isArray(options.search)) searchfields = options.search;
     else if (typeof options.search === 'string') searchfields = options.search.split(',');
     else searchfields = this.searchfields;
@@ -173,8 +174,20 @@ const _SEARCH = function (options, cb) {
     if (typeof options.values === 'string') {
       let split = options.values.split(',');
       let isObjectIds = (split.filter(utility.isObjectId).length === split.length);
-      if (isObjectIds) query[toplevel].push({ '_id': { $in: split, }, });
-      else query[toplevel].push({ [(options.docid || this.docid) ? (options.docid || this.docid) : '_id']: { $in: split, }, });
+      if (isObjectIds){ query[toplevel].push({ '_id': { $in: split, }, });}
+      else if(Array.isArray(docid)){
+        docid.forEach(d=>{
+        if(d==='_id'){
+          if(utility.isObjectId(options.query)){
+            query[toplevel].push({ [d] : { $in: split, }, });
+          }
+        } else{
+          query[toplevel].push({ [d] : { $in: split, }, });
+        }
+      });
+      } else{ 
+        query[toplevel].push({ [(docid) ? (docid) : '_id']: { $in: split, }, });
+      }
     }
     options.query = query;
     if (options.paginate) _QUERY_WITH_PAGINATION.call(this, options, cb);
@@ -198,14 +211,33 @@ const _SEARCH = function (options, cb) {
 const _LOAD = function (options, cb) {
   try {
     let Model = options.model || this.model;
+    let query;
     //Iteratively checks if value was passed in options argument and conditionally assigns the default value if not passed in options
     let { sort, population, fields, docid, } = ['sort', 'population', 'fields', 'docid',].reduce((result, key) => {
       result[key] = options[key] || this[key];
       return result;
     }, {});
-    let query = (options.query && typeof options.query === 'object') ? options.query : {
-      [(utility.isObjectId(options.query)) ? '_id' : (docid || '_id')]: options.query,
-    };
+    if(options.query && typeof options.query === 'object') {
+      query = options.query;
+    }
+    else if((Array.isArray(docid))){
+      query = { '$or':[], };
+      docid.forEach(d=>{
+        if(d==='_id'){
+          if(utility.isObjectId(options.query)){
+            query.$or.push({ [d] : options.query, });
+          }
+        } else{
+          query.$or.push({ [d] : options.query, });
+        }
+      });
+    } else{
+      query = {
+        [(utility.isObjectId(options.query)) ? '_id' : (docid || '_id')]: options.query,
+      };
+    }
+    // const util = require('util');
+    // console.log(util.inspect(query,{depth:20}));
     Model.findOne(query, fields)
       .sort(sort)
       .populate(population || '')
