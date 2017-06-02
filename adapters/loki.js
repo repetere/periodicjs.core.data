@@ -31,19 +31,19 @@ const _QUERY = function(options, cb) {
       .find((options.query && typeof options.query === 'object') ? options.query : {});
     if (sort) {
       switch (typeof sort) {
-      case 'string':
-        chain = chain.simplesort(sort);
-        break;
-      case 'object':
-        if (Array.isArray(sort)) {
-          chain = chain.compoundsort(sort);
-        } else {
-          chain = chain.compoundsort(convertSortObjToOrderArray(sort));
-        }
-        break;
-      case 'function':
-        chain = chain.sort(sort);
-        break;
+        case 'string':
+          chain = chain.simplesort(sort);
+          break;
+        case 'object':
+          if (Array.isArray(sort)) {
+            chain = chain.compoundsort(sort);
+          } else {
+            chain = chain.compoundsort(convertSortObjToOrderArray(sort));
+          }
+          break;
+        case 'function':
+          chain = chain.sort(sort);
+          break;
       }
     }
     if (skip) chain = chain.offset(Number(skip));
@@ -137,23 +137,23 @@ const _QUERY_WITH_PAGINATION = function(options, cb) {
     let index = 0;
     skip = (typeof skip === 'number') ? skip : 0;
     Promisie.doWhilst(() => {
-      return new Promisie((resolve, reject) => {
-        _QUERY.call(this, { query, sort, limit: (total + pagelength <= limit) ? pagelength : (limit - total), fields, skip, population, model: Model, }, (err, data) => {
-          if (err) reject(err);
-          else {
-            skip += data.length;
-            total += data.length;
-            pages.total += data.length;
-            pages.total_pages++;
-            pages[index++] = {
-              documents: data,
-              count: data.length,
-            };
-            resolve(data.length);
-          }
+        return new Promisie((resolve, reject) => {
+          _QUERY.call(this, { query, sort, limit: (total + pagelength <= limit) ? pagelength : (limit - total), fields, skip, population, model: Model, }, (err, data) => {
+            if (err) reject(err);
+            else {
+              skip += data.length;
+              total += data.length;
+              pages.total += data.length;
+              pages.total_pages++;
+              pages[index++] = {
+                documents: data,
+                count: data.length,
+              };
+              resolve(data.length);
+            }
+          });
         });
-      });
-    }, current => (current === pagelength && total < limit))
+      }, current => (current === pagelength && total < limit))
       .then(() => cb(null, pages))
       .catch(cb);
   } catch (e) {
@@ -183,12 +183,14 @@ const _SEARCH = function(options, cb) {
   try {
     let query;
     let searchfields;
+    let docid = options.docid || this.docid;
     if (Array.isArray(options.search)) searchfields = options.search;
     else if (typeof options.search === 'string') searchfields = options.search.split(',');
     else searchfields = this.searchfields;
     let toplevel = (options.inclusive) ? '$or' : '$and';
     query = {
-      [toplevel]: [], };
+      [toplevel]: [],
+    };
     //Pushes options.query if it already a composed query object
     if (options.query && typeof options.query === 'object') query[toplevel].push(options.query);
     //Handles options.query if string or number
@@ -201,7 +203,8 @@ const _SEARCH = function(options, cb) {
         let block = { $or: [], };
         for (let i = 0; i < searchfields.length; i++) {
           block.$or.push({
-            [searchfields[i]]: { $regex:value, }, });
+            [searchfields[i]]: { $regex: value, },
+          });
         }
         return result.concat(block);
       }, []);
@@ -212,8 +215,28 @@ const _SEARCH = function(options, cb) {
       let split = options.values.split(',');
       let isObjectIds = (split.filter(utility.isObjectId).length === split.length);
       if (isObjectIds) query[toplevel].push({ '_id': { $in: split, }, });
-      else query[toplevel].push({
-        [(options.docid || this.docid) ? (options.docid || this.docid) : '_id']: { $in: split, }, });
+      else if (Array.isArray(docid)) {
+        docid.forEach(d => {
+          if (d === '_id') {
+            if (utility.isObjectId(options.query)) {
+              query[toplevel].push({
+                [d]: { $in: split, },
+              });
+            }
+          } else {
+            query[toplevel].push({
+              [d]: { $in: split, },
+            });
+          }
+        });
+      } else {
+        query[toplevel].push({
+          [(docid) ? (docid) : '_id']: { $in: split, },
+        });
+      }
+      // else query[toplevel].push({
+      //   [(options.docid || this.docid) ? (options.docid || this.docid) : '_id']: { $in: split, },
+      // });
     }
     options.query = query;
     if (options.paginate) _QUERY_WITH_PAGINATION.call(this, options, cb);
@@ -237,12 +260,13 @@ const _SEARCH = function(options, cb) {
 const _LOAD = function(options, cb) {
   try {
     let Model = options.model || this.model;
+    let query;
+
     //Iteratively checks if value was passed in options argument and conditionally assigns the default value if not passed in options
     let { sort, population, fields, docid, } = ['sort', 'population', 'fields', 'docid', ].reduce((result, key) => {
       result[key] = options[key] || this[key];
       return result;
     }, {});
-    let query;
     let method;
     let useQuery;
     if (typeof query === 'number') {
@@ -253,9 +277,33 @@ const _LOAD = function(options, cb) {
     } else {
       method = 'findOne';
     }
-    query = (options.query && typeof options.query === 'object') ? options.query : {
-      [(utility.isObjectId(options.query)) ? '_id' : (docid || '_id')]: options.query,
-    };
+    // query = (options.query && typeof options.query === 'object') ? options.query : {
+    //   [(utility.isObjectId(options.query)) ? '_id' : (docid || '_id')]: options.query,
+    // };
+    if (options.query && typeof options.query === 'object') {
+      query = options.query;
+    } else if ((Array.isArray(docid))) {
+      useQuery = true;
+      query = { '$or': [], };
+      docid.forEach(d => {
+        if (d === '_id') {
+          if (utility.isObjectId(options.query)) {
+            query.$or.push({
+              [d]: options.query,
+            });
+          }
+        } else {
+          query.$or.push({
+            [d]: options.query,
+          });
+        }
+      });
+    } else {
+      query = {
+        [(utility.isObjectId(options.query)) ? '_id' : (docid || '_id')]: options.query,
+      };
+    }
+    // console.log({ query, method, useQuery })
     if (useQuery) _QUERY.call(this, Object.assign(options, { limit: 1, query, }), (err, result) => {
       if (err) cb(err);
       else cb(null, result.slice(0, 1)[0]);
@@ -339,16 +387,16 @@ const _UPDATE = function(options, cb) {
     let updateOperation = (usePatch) ? GENERATE_PATCH(options.updatedoc) : GENERATE_PUT(options.updatedoc);
     let Model = options.model || this.model;
     Promisie.parallel({
-      update: (!usePatch) ? Model.update(updateOperation) : (() => {
-        return () => {
-          return Promisie.promisify(_QUERY, this)({ query: (options.query) ? options.query : { _id: options.id, }, })
+        update: (!usePatch) ? Model.update(updateOperation) : (() => {
+          return () => {
+            return Promisie.promisify(_QUERY, this)({ query: (options.query) ? options.query : { _id: options.id, }, })
               .map(updateOperation)
               .map(Model.update.bind(Model))
               .catch(e => Promisie.reject(e));
-        };
-      })(),
-      changes: Promisie.promisify(generateChanges)(),
-    })
+          };
+        })(),
+        changes: Promisie.promisify(generateChanges)(),
+      })
       .then(result => {
         if (options.ensure_changes) cb(null, result);
         else cb(null, { status: 'ok', });
@@ -504,24 +552,24 @@ const LOKI_ADAPTER = class Loki_Adapter {
    * @param {string[]} [options.xss_whitelist=false] Configuration for XSS whitelist package. If false XSS whitelisting will be ignored
    */
   constructor(options = {}) {
-    this.db_connection = options.db_connection || lowkie;
-    this.docid = options.docid; //previously docnamelookup
-    this.model = (typeof options.model === 'string') ? this.db_connection.model(options.model) : options.model;
-    this.sort = options.sort || '-createdat';
-    this.limit = options.limit || 500;
-    this.skip = options.skip || 0;
-    if (Array.isArray(options.search)) this.searchfields = options.search;
-    else if (typeof options.search === 'string') this.searchfields = options.search.split(',');
-    else this.searchfields = [];
-    this.population = options.population;
-    this.fields = options.fields;
-    this.pagelength = options.pagelength || 15;
-    this.cache = options.cache;
-    this.track_changes = (options.track_changes === false) ? false : true;
-    this.changeset = require(path.join(__dirname, '../changeset/index')).loki_default;
-    this.xss_whitelist = options.xss_whitelist || xss_default_whitelist;
-    this._useCache = (options.useCache && options.cache) ? true : false;
-  }
+      this.db_connection = options.db_connection || lowkie;
+      this.docid = options.docid; //previously docnamelookup
+      this.model = (typeof options.model === 'string') ? this.db_connection.model(options.model) : options.model;
+      this.sort = options.sort || '-createdat';
+      this.limit = options.limit || 500;
+      this.skip = options.skip || 0;
+      if (Array.isArray(options.search)) this.searchfields = options.search;
+      else if (typeof options.search === 'string') this.searchfields = options.search.split(',');
+      else this.searchfields = [];
+      this.population = options.population;
+      this.fields = options.fields;
+      this.pagelength = options.pagelength || 15;
+      this.cache = options.cache;
+      this.track_changes = (options.track_changes === false) ? false : true;
+      this.changeset = require(path.join(__dirname, '../changeset/index')).loki_default;
+      this.xss_whitelist = options.xss_whitelist || xss_default_whitelist;
+      this._useCache = (options.useCache && options.cache) ? true : false;
+    }
     /**
      * Query method for adapter see _QUERY and _QUERY_WITH_PAGINATION for more details
      * @param  {Object}  [options={}] Configurable options for query
@@ -530,10 +578,10 @@ const LOKI_ADAPTER = class Loki_Adapter {
      * @return {Object}          Returns a Promise when cb argument is not passed
      */
   query(options = {}, cb = false) {
-    let _query = (options && options.paginate) ? _QUERY_WITH_PAGINATION.bind(this) : _QUERY.bind(this);
-    if (typeof cb === 'function') _query(options, cb);
-    else return Promisie.promisify(_query)(options);
-  }
+      let _query = (options && options.paginate) ? _QUERY_WITH_PAGINATION.bind(this) : _QUERY.bind(this);
+      if (typeof cb === 'function') _query(options, cb);
+      else return Promisie.promisify(_query)(options);
+    }
     /**
      * Search method for adapter see _SEARCH for more details
      * @param  {Object}  [options={}] Configurable options for query
@@ -541,10 +589,10 @@ const LOKI_ADAPTER = class Loki_Adapter {
      * @return {Object}          Returns a Promise when cb argument is not passed
      */
   search(options = {}, cb = false) {
-    let _search = _SEARCH.bind(this);
-    if (typeof cb === 'function') _search(options, cb);
-    else return Promisie.promisify(_search)(options);
-  }
+      let _search = _SEARCH.bind(this);
+      if (typeof cb === 'function') _search(options, cb);
+      else return Promisie.promisify(_search)(options);
+    }
     /**
      * Stream method for adapter see _STREAM for more details
      * @param  {Object}  [options={}] Configurable options for stream
@@ -552,10 +600,10 @@ const LOKI_ADAPTER = class Loki_Adapter {
      * @return {Object}          Returns a Promise when cb argument is not passed
      */
   stream(options = {}, cb = false) {
-    let _stream = _STREAM.bind(this);
-    if (typeof cb === 'function') _stream(options, cb);
-    else return Promisie.promisify(_stream)(options);
-  }
+      let _stream = _STREAM.bind(this);
+      if (typeof cb === 'function') _stream(options, cb);
+      else return Promisie.promisify(_stream)(options);
+    }
     /**
      * Load method for adapter see _LOAD for more details
      * @param  {Object}  [options={}] Configurable options for load
@@ -563,10 +611,10 @@ const LOKI_ADAPTER = class Loki_Adapter {
      * @return {Object}          Returns a Promise when cb argument is not passed
      */
   load(options = {}, cb = false) {
-    let _load = _LOAD.bind(this);
-    if (typeof cb === 'function') _load(options, cb);
-    else return Promisie.promisify(_load)(options);
-  }
+      let _load = _LOAD.bind(this);
+      if (typeof cb === 'function') _load(options, cb);
+      else return Promisie.promisify(_load)(options);
+    }
     /**
      * Update method for adapter see _UPDATE, _UPDATED and _UPDATE_ALL for more details
      * @param  {Object}  [options={}] Configurable options for update
@@ -576,10 +624,10 @@ const LOKI_ADAPTER = class Loki_Adapter {
      * @return {Object}          Returns a Promise when cb argument is not passed
      */
   update(options = {}, cb = false) {
-    let _update = (options.multi) ? _UPDATE_ALL.bind(this) : ((options.return_updated) ? _UPDATED.bind(this) : _UPDATE.bind(this));
-    if (typeof cb === 'function') _update(options, cb);
-    else return Promisie.promisify(_update)(options);
-  }
+      let _update = (options.multi) ? _UPDATE_ALL.bind(this) : ((options.return_updated) ? _UPDATED.bind(this) : _UPDATE.bind(this));
+      if (typeof cb === 'function') _update(options, cb);
+      else return Promisie.promisify(_update)(options);
+    }
     /**
      * Create method for adapter see _CREATE for more details
      * @param  {Object}  [options={}] Configurable options for create
@@ -587,10 +635,10 @@ const LOKI_ADAPTER = class Loki_Adapter {
      * @return {Object}          Returns a Promise when cb argument is not passed
      */
   create(options = {}, cb = false) {
-    let _create = _CREATE.bind(this);
-    if (typeof cb === 'function') _create(options, cb);
-    else return Promisie.promisify(_create)(options);
-  }
+      let _create = _CREATE.bind(this);
+      if (typeof cb === 'function') _create(options, cb);
+      else return Promisie.promisify(_create)(options);
+    }
     /**
      * Delete method for adapter see _DELETE and _DELETED for more details
      * @param  {Object}  [options={}] Configurable options for create
