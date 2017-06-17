@@ -256,7 +256,7 @@ describe('Loki adapter testing', function () {
     });
     it('Should be able to handle pagination', done => {
       let query = {
-        'contact.first_name': /^hello/i
+        'contact.first_name': { $regex: /^hello/i }
       };
       let values = 'Foobar,Fizzbuzz';
       Adapter.search({ query, values, docid: 'contact.last_name', inclusive: true, paginate: true, pagelength: 2, limit: 5 })

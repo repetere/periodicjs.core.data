@@ -23,10 +23,10 @@ const _QUERY = function(options, cb) {
     let Model = options.model || this.model;
     //Iteratively checks if value was passed in options argument and conditionally assigns the default value if not passed in options
     let { sort, limit, population, fields, skip, } = ['sort', 'limit', 'population', 'fields', 'skip', ].reduce((result, key) => {
+      if (options[key] && !isNaN(Number(options[key]))) options[key] = Number(options[key]);
       result[key] = options[key] || this[key];
       return result;
     }, {});
-
     let chain = Model.chain()
       .find((options.query && typeof options.query === 'object') ? options.query : {});
     if (sort) {
@@ -126,6 +126,7 @@ const _QUERY_WITH_PAGINATION = function(options, cb) {
     let Model = options.model || this.model;
     //Iteratively checks if value was passed in options argument and conditionally assigns the default value if not passed in options
     let { sort, limit, population, fields, skip, pagelength, query, } = ['sort', 'limit', 'population', 'fields', 'skip', 'pagelength', 'query', ].reduce((result, key) => {
+      if (options[key] && !isNaN(Number(options[key]))) options[key] = Number(options[key]);
       result[key] = options[key] || this[key];
       return result;
     }, {});
@@ -264,6 +265,7 @@ const _LOAD = function(options, cb) {
 
     //Iteratively checks if value was passed in options argument and conditionally assigns the default value if not passed in options
     let { sort, population, fields, docid, } = ['sort', 'population', 'fields', 'docid', ].reduce((result, key) => {
+      if (options[key] && !isNaN(Number(options[key]))) options[key] = Number(options[key]);
       result[key] = options[key] || this[key];
       return result;
     }, {});

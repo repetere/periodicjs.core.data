@@ -20,17 +20,7 @@ var localConnectionOptions = ['test_core_data', 'root', 'root', {
 	host: 'localhost',
 	logging: false
 }];
-/**
-       "database": "travis_ci_test",
-      "username": "",
-      "password": "",
-      "connection_options": {
-        "dialect": "postgres",
-        "port": 5432,
-        "host": "127.0.0.1",
-        "logging": false
-      }
- */
+
 var travisConnectionOptions = ['test_core_data', 'travis', '', {
 	dialect: 'mysql',
 	port: 3306,
