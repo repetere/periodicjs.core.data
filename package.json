@@ -42,7 +42,7 @@
     "grunt-simple-mocha": "~0.4.0",
     "istanbul": "^0.4.5",
     "jsdoc": "^3.4.3",
-    "lowkie": "^0.5.0",
+    "lowkie": "^1.0.0",
     "mocha": "~2.2.5",
     "mocha-lcov-reporter": "^1.2.0",
     "moment": "~2.13.0",
@@ -94,6 +94,6 @@
   "scripts": {
     "test": "mocha -R spec --recursive"
   },
-  "version": "0.5.6",
+  "version": "0.6.0",
   "license": "MIT"
 }
