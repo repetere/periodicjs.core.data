@@ -101,25 +101,44 @@ const _QUERY_WITH_PAGINATION = function (options, cb) {
     let total = 0;
     let index = 0;
     skip = (typeof skip === 'number') ? skip : 0;
-    Promisie.doWhilst(() => {
-      return new Promisie((resolve, reject) => {
-        _QUERY.call(this, { query, sort, limit: (total + pagelength <= limit) ? pagelength : (limit - total), fields, skip, population, model: Model, }, (err, data) => {
-          if (err) reject(err);
-          else {
-            skip += data.length;
-            total += data.length;
-            pages.total += data.length;
-            pages.total_pages++;
-            pages[index++] = {
-              documents: data,
-              count: data.length,
-            };
-            resolve(data.length);
-          }
+    Promisie.parallel({
+      count: () => {
+        return new Promisie((resolve, reject) => {
+          _QUERY.call(this, { query: {}, limit: false }, (err, total) => {
+            if (err) reject(err);
+            else resolve(total.length);
+          });
         });
-      });
-    }, current => (current === pagelength && total < limit))
-      .then(() => cb(null, pages))
+      },
+      pagination: () => {
+        return Promisie.doWhilst(() => {
+          return new Promisie((resolve, reject) => {
+            _QUERY.call(this, { query, sort, limit: (total + pagelength <= limit) ? pagelength : (limit - total), fields, skip, population, model: Model, }, (err, data) => {
+              if (err) reject(err);
+              else {
+                skip += data.length;
+                total += data.length;
+                pages.total += data.length;
+                pages.total_pages++;
+                pages[index++] = {
+                  documents: data,
+                  count: data.length,
+                };
+                resolve(data.length);
+              }
+            });
+          });
+        }, current => (current === pagelength && total < limit))
+          .then(() => pages)
+          .catch(e => Promisie.reject(e));
+      }
+    })
+      .then(result => {
+        cb(null, Object.assign({}, result.pagination, {
+          collection_count: result.count,
+          collection_pages: Math.ceil(result.count / pagelength)
+        }));
+      })
       .catch(cb);
   }  catch (e) {
     cb(e);
