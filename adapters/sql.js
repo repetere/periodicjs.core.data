@@ -186,7 +186,7 @@ const _QUERY_WITH_PAGINATION = function(options, cb) {
     Promisie.parallel({
       count: () => {
         return new Promisie((resolve, reject) => {
-          _QUERY.call(this, { query: {}, limit: false }, (err, total) => {
+          _QUERY.call(this, { query, limit: false }, (err, total) => {
             if (err) reject(err);
             else resolve(total.length);
           });
@@ -219,7 +219,7 @@ const _QUERY_WITH_PAGINATION = function(options, cb) {
       .then(result => {
         cb(null, Object.assign({}, result.pagination, {
           collection_count: result.count,
-          collection_pages: Math.ceil(result.count / pagelength)
+          collection_pages: Math.ceil(result.count / ((pagelength <= limit) ? pagelength : limit))
         }));
       })
       .catch(cb);
