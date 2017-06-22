@@ -493,7 +493,7 @@ const _CREATE = function(options, cb) {
     let xss_whitelist = (options.xss_whitelist) ? options.xss_whitelist : this.xss_whitelist;
     if (Array.isArray(newdoc) && options.bulk_create) {
       newdoc = newdoc.map(doc => utility.enforceXSSRules(doc, xss_whitelist, options));
-      Promisie.map(newdoc, Model.insert.bind(Model))
+      Promisie.map(newdoc, 1, Model.insert.bind(Model))
         .map(result => result[0])
         .then(created => cb(null, created))
         .catch(cb);
