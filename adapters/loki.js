@@ -31,29 +31,31 @@ const _QUERY = function(options, cb) {
       .find((options.query && typeof options.query === 'object') ? options.query : {});
     if (sort) {
       switch (typeof sort) {
-        case 'string':
-          chain = chain.simplesort(sort);
-          break;
-        case 'object':
-          if (Array.isArray(sort)) {
-            chain = chain.compoundsort(sort);
-          } else {
-            chain = chain.compoundsort(convertSortObjToOrderArray(sort));
-          }
-          break;
-        case 'function':
-          chain = chain.sort(sort);
-          break;
+      case 'string':
+        chain = chain.simplesort(sort);
+        break;
+      case 'object':
+        if (Array.isArray(sort)) {
+          chain = chain.compoundsort(sort);
+        } else {
+          chain = chain.compoundsort(convertSortObjToOrderArray(sort));
+        }
+        break;
+      case 'function':
+        chain = chain.sort(sort);
+        break;
       }
     }
     if (skip) chain = chain.offset(Number(skip));
     if (limit) chain = chain.limit(Number(limit));
     if ((typeof population === 'string' && population.length) || population) {
-      return Model.populate(population, { 
-        _id: { 
-          $in: chain.data().map(data => data._id) 
-        } 
-      });
+      Model.populate(population, {
+        _id: {
+          $in: chain.data().map(data => data._id),
+        },
+      })
+        .then(result => cb(null, result))
+        .catch(cb);
     } else {
       let result = chain.data(Object.assign({ forceClones: (options.forceClones === false) ? false : true, }));
       cb(null, result);
@@ -148,7 +150,7 @@ const _QUERY_WITH_PAGINATION = function(options, cb) {
     Promisie.parallel({
       count: () => {
         return new Promisie((resolve, reject) => {
-          _QUERY.call(this, { query, limit: false }, (err, total) => {
+          _QUERY.call(this, { query, limit: false, }, (err, total) => {
             if (err) reject(err);
             else resolve(total.length);
           });
@@ -175,12 +177,12 @@ const _QUERY_WITH_PAGINATION = function(options, cb) {
         }, current => (current === pagelength && total < limit))
           .then(() => pages)
           .catch(e => Promisie.reject(e));
-      }
+      },
     })
       .then(result => {
         cb(null, Object.assign({}, result.pagination, {
           collection_count: result.count,
-          collection_pages: Math.ceil(result.count / ((pagelength <= limit) ? pagelength : limit))
+          collection_pages: Math.ceil(result.count / ((pagelength <= limit) ? pagelength : limit)),
         }));
       })
       .catch(cb);
@@ -581,24 +583,24 @@ const LOKI_ADAPTER = class Loki_Adapter {
    * @param {string[]} [options.xss_whitelist=false] Configuration for XSS whitelist package. If false XSS whitelisting will be ignored
    */
   constructor(options = {}) {
-      this.db_connection = options.db_connection || lowkie;
-      this.docid = options.docid; //previously docnamelookup
-      this.model = (typeof options.model === 'string') ? this.db_connection.model(options.model) : options.model;
-      this.sort = options.sort || '-createdat';
-      this.limit = options.limit || 500;
-      this.skip = options.skip || 0;
-      if (Array.isArray(options.search)) this.searchfields = options.search;
-      else if (typeof options.search === 'string') this.searchfields = options.search.split(',');
-      else this.searchfields = [];
-      this.population = options.population;
-      this.fields = options.fields;
-      this.pagelength = options.pagelength || 15;
-      this.cache = options.cache;
-      this.track_changes = (options.track_changes === false) ? false : true;
-      this.changeset = require(path.join(__dirname, '../changeset/index')).loki_default;
-      this.xss_whitelist = options.xss_whitelist || xss_default_whitelist;
-      this._useCache = (options.useCache && options.cache) ? true : false;
-    }
+    this.db_connection = options.db_connection || lowkie;
+    this.docid = options.docid; //previously docnamelookup
+    this.model = (typeof options.model === 'string') ? this.db_connection.model(options.model) : options.model;
+    this.sort = options.sort || '-createdat';
+    this.limit = options.limit || 500;
+    this.skip = options.skip || 0;
+    if (Array.isArray(options.search)) this.searchfields = options.search;
+    else if (typeof options.search === 'string') this.searchfields = options.search.split(',');
+    else this.searchfields = [];
+    this.population = options.population;
+    this.fields = options.fields;
+    this.pagelength = options.pagelength || 15;
+    this.cache = options.cache;
+    this.track_changes = (options.track_changes === false) ? false : true;
+    this.changeset = require(path.join(__dirname, '../changeset/index')).loki_default;
+    this.xss_whitelist = options.xss_whitelist || xss_default_whitelist;
+    this._useCache = (options.useCache && options.cache) ? true : false;
+  }
     /**
      * Query method for adapter see _QUERY and _QUERY_WITH_PAGINATION for more details
      * @param  {Object}  [options={}] Configurable options for query
@@ -607,10 +609,10 @@ const LOKI_ADAPTER = class Loki_Adapter {
      * @return {Object}          Returns a Promise when cb argument is not passed
      */
   query(options = {}, cb = false) {
-      let _query = (options && options.paginate) ? _QUERY_WITH_PAGINATION.bind(this) : _QUERY.bind(this);
-      if (typeof cb === 'function') _query(options, cb);
-      else return Promisie.promisify(_query)(options);
-    }
+    let _query = (options && options.paginate) ? _QUERY_WITH_PAGINATION.bind(this) : _QUERY.bind(this);
+    if (typeof cb === 'function') _query(options, cb);
+    else return Promisie.promisify(_query)(options);
+  }
     /**
      * Search method for adapter see _SEARCH for more details
      * @param  {Object}  [options={}] Configurable options for query
@@ -618,10 +620,10 @@ const LOKI_ADAPTER = class Loki_Adapter {
      * @return {Object}          Returns a Promise when cb argument is not passed
      */
   search(options = {}, cb = false) {
-      let _search = _SEARCH.bind(this);
-      if (typeof cb === 'function') _search(options, cb);
-      else return Promisie.promisify(_search)(options);
-    }
+    let _search = _SEARCH.bind(this);
+    if (typeof cb === 'function') _search(options, cb);
+    else return Promisie.promisify(_search)(options);
+  }
     /**
      * Stream method for adapter see _STREAM for more details
      * @param  {Object}  [options={}] Configurable options for stream
@@ -629,10 +631,10 @@ const LOKI_ADAPTER = class Loki_Adapter {
      * @return {Object}          Returns a Promise when cb argument is not passed
      */
   stream(options = {}, cb = false) {
-      let _stream = _STREAM.bind(this);
-      if (typeof cb === 'function') _stream(options, cb);
-      else return Promisie.promisify(_stream)(options);
-    }
+    let _stream = _STREAM.bind(this);
+    if (typeof cb === 'function') _stream(options, cb);
+    else return Promisie.promisify(_stream)(options);
+  }
     /**
      * Load method for adapter see _LOAD for more details
      * @param  {Object}  [options={}] Configurable options for load
@@ -640,10 +642,10 @@ const LOKI_ADAPTER = class Loki_Adapter {
      * @return {Object}          Returns a Promise when cb argument is not passed
      */
   load(options = {}, cb = false) {
-      let _load = _LOAD.bind(this);
-      if (typeof cb === 'function') _load(options, cb);
-      else return Promisie.promisify(_load)(options);
-    }
+    let _load = _LOAD.bind(this);
+    if (typeof cb === 'function') _load(options, cb);
+    else return Promisie.promisify(_load)(options);
+  }
     /**
      * Update method for adapter see _UPDATE, _UPDATED and _UPDATE_ALL for more details
      * @param  {Object}  [options={}] Configurable options for update
@@ -653,10 +655,10 @@ const LOKI_ADAPTER = class Loki_Adapter {
      * @return {Object}          Returns a Promise when cb argument is not passed
      */
   update(options = {}, cb = false) {
-      let _update = (options.multi) ? _UPDATE_ALL.bind(this) : ((options.return_updated) ? _UPDATED.bind(this) : _UPDATE.bind(this));
-      if (typeof cb === 'function') _update(options, cb);
-      else return Promisie.promisify(_update)(options);
-    }
+    let _update = (options.multi) ? _UPDATE_ALL.bind(this) : ((options.return_updated) ? _UPDATED.bind(this) : _UPDATE.bind(this));
+    if (typeof cb === 'function') _update(options, cb);
+    else return Promisie.promisify(_update)(options);
+  }
     /**
      * Create method for adapter see _CREATE for more details
      * @param  {Object}  [options={}] Configurable options for create
@@ -664,10 +666,10 @@ const LOKI_ADAPTER = class Loki_Adapter {
      * @return {Object}          Returns a Promise when cb argument is not passed
      */
   create(options = {}, cb = false) {
-      let _create = _CREATE.bind(this);
-      if (typeof cb === 'function') _create(options, cb);
-      else return Promisie.promisify(_create)(options);
-    }
+    let _create = _CREATE.bind(this);
+    if (typeof cb === 'function') _create(options, cb);
+    else return Promisie.promisify(_create)(options);
+  }
     /**
      * Delete method for adapter see _DELETE and _DELETED for more details
      * @param  {Object}  [options={}] Configurable options for create
