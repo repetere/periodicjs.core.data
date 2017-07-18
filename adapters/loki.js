@@ -48,8 +48,16 @@ const _QUERY = function(options, cb) {
     }
     if (skip) chain = chain.offset(Number(skip));
     if (limit) chain = chain.limit(Number(limit));
-    let result = chain.data(Object.assign({ forceClones: (options.forceClones === false) ? false : true, }));
-    cb(null, result);
+    if ((typeof population === 'string' && population.length) || population) {
+      return Model.populate(population, { 
+        _id: { 
+          $in: chain.data().map(data => data._id) 
+        } 
+      });
+    } else {
+      let result = chain.data(Object.assign({ forceClones: (options.forceClones === false) ? false : true, }));
+      cb(null, result);
+    }
   } catch (e) {
     cb(e);
   }
@@ -408,20 +416,20 @@ const _UPDATE = function(options, cb) {
     let updateOperation = (usePatch) ? GENERATE_PATCH(options.updatedoc) : GENERATE_PUT(options.updatedoc);
     let Model = options.model || this.model;
     Promisie.parallel({
-        update: (!usePatch) ? Model.update(updateOperation) : (() => {
-          return () => {
-            return Promisie.promisify(_QUERY, this)({ query: (options.query) ? options.query : { _id: options.id, }, })
-              .map(updateOperation)
-              .map(Model.update.bind(Model))
-              .catch(e => Promisie.reject(e));
-          };
-        })(),
-        changes: Promisie.promisify(generateChanges)(),
-      })
-      .then(result => {
-        if (options.ensure_changes) cb(null, result);
-        else cb(null, { status: 'ok', });
-      }, cb);
+      update: (!usePatch) ? Model.update(updateOperation) : (() => {
+        return () => {
+          return Promisie.promisify(_QUERY, this)({ query: (options.query) ? options.query : { _id: options.id, }, })
+            .map(updateOperation)
+            .map(Model.update.bind(Model))
+            .catch(e => Promisie.reject(e));
+        };
+      })(),
+      changes: Promisie.promisify(generateChanges)(),
+    })
+    .then(result => {
+      if (options.ensure_changes) cb(null, result);
+      else cb(null, { status: 'ok', });
+    }, cb);
   } catch (e) {
     cb(e);
   }
