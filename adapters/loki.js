@@ -268,6 +268,10 @@ const _SEARCH = function(options, cb) {
       //   [(options.docid || this.docid) ? (options.docid || this.docid) : '_id']: { $in: split, },
       // });
     }
+
+    if (options.fq) {
+      query[toplevel].push(...utility.filterqueries.getFilterQueries(options.fq, 'loki'));
+    }
     options.query = query;
     if (options.paginate) _QUERY_WITH_PAGINATION.call(this, options, cb);
     else _QUERY.call(this, options, cb);
