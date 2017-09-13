@@ -49,7 +49,7 @@ const _QUERY = function(options, cb) {
 
     if (Object.keys(queryOptions.where).length === 0) delete queryOptions.where;
     if (fields) queryOptions.attributes = GENERATE_SELECT(fields);
-    if (sort) queryOptions.order = (Array.isArray(sort) === false) ?
+    if (sort) queryOptions.order = (!Array.isArray(sort) && typeof sort !== 'string') ?
       convertSortObjToOrderArray(sort) :
       sort;
     if (skip) queryOptions.offset = skip;
@@ -204,7 +204,7 @@ const _QUERY_WITH_PAGINATION = function(options, cb) {
                 pages.total_pages++;
                 pages[index++] = {
                   documents: (this.jsonify_results) ?
-                  getJSONResults(data) : data,
+                    getJSONResults(data) : data,
                   count: data.length,
                 };
                 resolve(data.length);
@@ -212,8 +212,8 @@ const _QUERY_WITH_PAGINATION = function(options, cb) {
             });
           });
         }, current => (current === pagelength && total < limit))
-          .then(() => pages)
-          .catch(e => Promisie.reject(e));
+        .then(() => pages)
+        .catch(e => Promisie.reject(e));
       }
     })
       .then(result => {
@@ -270,7 +270,7 @@ const _SEARCH = function(options, cb) {
         let block = { $or: [], };
         for (let i = 0; i < searchfields.length; i++) {
           block.$or.push({
-            [searchfields[i]]: { $iLike: `${value}%`, },
+            [searchfields[i]]: { $like: `%${value}`, },
           });
         }
         return result.concat(block);
@@ -371,7 +371,7 @@ const _LOAD = function(options, cb) {
     };
     if (fields) queryOptions.attributes = GENERATE_SELECT(fields);
     // if (sort) queryOptions.order = sort;
-    if (sort) queryOptions.order = (Array.isArray(sort) === false) ?
+    if (sort) queryOptions.order = (!Array.isArray(sort) && typeof sort !== 'string') ?
       convertSortObjToOrderArray(sort) :
       sort;
     if (population) {
@@ -420,22 +420,22 @@ const _UPDATE = function(options, cb) {
           return this.sync();
         })()
         .then(() => {
-            return Promisie.map(Object.keys(changeset), (key) => {
-              return this.changeset.create({
-                parent_document_id: options.id,
-                field_name: key,
-                original: (changeset[key].length > 1) ? changeset[key][0] : 'new value',
-                update: (changeset[key].length < 2) ? changeset[0] : ((changeset[key].length === 2) ? changeset[key][1] : 'deleted value'),
-              });
+          return Promisie.map(Object.keys(changeset), (key) => {
+            return this.changeset.create({
+              parent_document_id: options.id,
+              field_name: key,
+              original: (changeset[key].length > 1) ? changeset[key][0] : 'new value',
+              update: (changeset[key].length < 2) ? changeset[0] : ((changeset[key].length === 2) ? changeset[key][1] : 'deleted value'),
             });
-          })
-          .then(result => {
-            if (options.ensure_changes) callback(null, (this.jsonify_results) ?
-              getPlainResult(result) :
-              result);
-          }, e => {
-            if (options.ensure_changes) callback(e);
           });
+        })
+        .then(result => {
+          if (options.ensure_changes) callback(null, (this.jsonify_results) ?
+            getPlainResult(result) :
+            result);
+        }, e => {
+          if (options.ensure_changes) callback(e);
+        });
       }
     };
     let xss_whitelist = (options.xss_whitelist) ? options.xss_whitelist : this.xss_whitelist;
@@ -447,19 +447,19 @@ const _UPDATE = function(options, cb) {
       }, ],
     };
     Promisie.parallel({
-        update: Model.update(options.updatedoc, (options.query && typeof options.query === 'object') ? {
-          limit: 1,
-          where: options.query,
-        } : {
-          where,
-          limit: 1,
-        }),
-        changes: Promisie.promisify(generateChanges)(),
-      })
-      .then(result => {
-        if (options.ensure_changes) cb(null, result);
-        else cb(null, result.update);
-      }, cb);
+      update: () => Model.update(options.updatedoc, (options.query && typeof options.query === 'object') ? {
+        limit: 1,
+        where: options.query,
+      } : {
+        where,
+        limit: 1,
+      }),
+      changes: () => Promisie.promisify(generateChanges)(),
+    })
+    .then(result => {
+      if (options.ensure_changes) cb(null, result);
+      else cb(null, result.update);
+    }, cb);
   } catch (e) {
     cb(e);
   }
@@ -651,154 +651,154 @@ const SQL_ADAPTER = class SQL_Adapter {
    * @param {string[]} [options.xss_whitelist=false] Configuration for XSS whitelist package. If false XSS whitelisting will be ignored
    */
   constructor(options = {}) {
-      if (options.db_connection && typeof options.db_connection === 'object') {
-        if (options.db_connection.models && options.db_connection.define) this.db_connection = options.db_connection;
-        else if (Array.isArray(options.db_connection)) {
-          let connectionOptions = options.db_connection;
-          this.db_connection = new Sequelize(...connectionOptions);
-        } else if (options.db_connection.db_name && options.db_connection.db_user && options.db_connection.db_password) {
-          let { db_name, db_user, db_password, db_options, } = options.db_connection;
-          this.db_connection = new Sequelize(db_name, db_user, db_password, db_options);
-        }
+    if (options.db_connection && typeof options.db_connection === 'object') {
+      if (options.db_connection.models && options.db_connection.define) this.db_connection = options.db_connection;
+      else if (Array.isArray(options.db_connection)) {
+        let connectionOptions = options.db_connection;
+        this.db_connection = new Sequelize(...connectionOptions);
+      } else if (options.db_connection.db_name && options.db_connection.db_user && options.db_connection.db_password) {
+        let { db_name, db_user, db_password, db_options, } = options.db_connection;
+        this.db_connection = new Sequelize(db_name, db_user, db_password, db_options);
       }
-      this.db_connection = (options.db_connection && typeof options.db_connection === 'object' && options.db_connection.models && options.db_connection.define) ? options.db_connection : new Sequelize(options.db_connection);
-      this.docid = options.docid || 'id';
-      this.jsonify_results = (typeof options.jsonify_results === 'boolean') ? options.jsonify_results : true;
-      if (options.model && typeof options.model === 'object') {
-        if (Array.isArray(options.model)) this.model = this.db_connection.define(...options.model);
-        else this.model = options.model;
-      } else this.model = this.db_connection.models[options.model];
-      this.sort = options.sort || 'createdat DESC';
-      this.limit = options.limit || 500;
-      this.skip = options.skip || 0;
-      if (Array.isArray(options.search)) this.searchfields = options.search;
-      else if (typeof options.search === 'string') this.searchfields = options.search.split(',');
-      else this.searchfields = [];
-      this.population = options.population || [];
-      this.fields = options.fields;
-      this.pagelength = options.pagelength || 15;
-      this.cache = options.cache;
-      this.changeset = (options.db_connection) ? require(path.join(__dirname, '../changeset/index')).sql(this.db_connection) : false;
-      this.track_changes = (options.track_changes === false || this.changeset === false) ? false : true;
-      this.xss_whitelist = options.xss_whitelist || xss_default_whitelist;
-      this._useCache = (options.useCache && options.cache) ? true : false;
     }
-    /**
-     * Sync defined sequelize models with SQL db
-     * @param  {Object}  [options={}] Configurable options for sequelize sync method
-     * @param  {Function} [cb=false] Callback argument. When cb is not passed function returns a Promise    
-     * @return {Object}          Returns a Promise when cb argument is not passed
-     */
+    this.db_connection = (options.db_connection && typeof options.db_connection === 'object' && options.db_connection.models && options.db_connection.define) ? options.db_connection : new Sequelize(options.db_connection);
+    this.docid = options.docid || 'id';
+    this.jsonify_results = (typeof options.jsonify_results === 'boolean') ? options.jsonify_results : true;
+    if (options.model && typeof options.model === 'object') {
+      if (Array.isArray(options.model)) this.model = this.db_connection.define(...options.model);
+      else this.model = options.model;
+    } else this.model = this.db_connection.models[options.model];
+    this.sort = options.sort || 'createdat DESC';
+    this.limit = options.limit || 500;
+    this.skip = options.skip || 0;
+    if (Array.isArray(options.search)) this.searchfields = options.search;
+    else if (typeof options.search === 'string') this.searchfields = options.search.split(',');
+    else this.searchfields = [];
+    this.population = options.population || [];
+    this.fields = options.fields;
+    this.pagelength = options.pagelength || 15;
+    this.cache = options.cache;
+    this.changeset = (options.db_connection) ? require(path.join(__dirname, '../changeset/index')).sql(this.db_connection) : false;
+    this.track_changes = (options.track_changes === false || this.changeset === false) ? false : true;
+    this.xss_whitelist = options.xss_whitelist || xss_default_whitelist;
+    this._useCache = (options.useCache && options.cache) ? true : false;
+  }
+  /**
+   * Sync defined sequelize models with SQL db
+   * @param  {Object}  [options={}] Configurable options for sequelize sync method
+   * @param  {Function} [cb=false] Callback argument. When cb is not passed function returns a Promise    
+   * @return {Object}          Returns a Promise when cb argument is not passed
+   */
   sync(options = {}, cb = false) {
-      if (typeof options === 'function') cb = options;
-      let _sync = function(callback) {
-        try {
-          this.db_connection.sync(options)
-            .then(connection => connection.authenticate())
-            .then(() => {
-              if (this.changeset && !this.changeset[IS_SYNCED]) {
-                Object.defineProperty(this.changeset, IS_SYNCED, {
-                  value: true,
-                  enumerable: false,
-                });
-              }
-              callback(null, { status: 'ok', });
-            })
-            .catch(callback);
-        } catch (e) {
-          callback(e);
-        }
-      }.bind(this);
-      if (typeof cb === 'function') _sync(cb);
-      else return Promisie.promisify(_sync)();
-    }
-    /**
-     * Query method for adapter see _QUERY and _QUERY_WITH_PAGINATION for more details
-     * @param  {Object}  [options={}] Configurable options for query
-     * @param {Boolean} options.paginate When true query will return data in a paginated form
-     * @param  {Function} [cb=false]     Callback argument. When cb is not passed function returns a Promise
-     * @return {Object}          Returns a Promise when cb argument is not passed
-     */
+    if (typeof options === 'function') cb = options;
+    let _sync = function(callback) {
+      try {
+        this.db_connection.sync(options)
+          .then(connection => connection.authenticate())
+          .then(() => {
+            if (this.changeset && !this.changeset[IS_SYNCED]) {
+              Object.defineProperty(this.changeset, IS_SYNCED, {
+                value: true,
+                enumerable: false,
+              });
+            }
+            callback(null, { status: 'ok', });
+          })
+          .catch(callback);
+      } catch (e) {
+        callback(e);
+      }
+    }.bind(this);
+    if (typeof cb === 'function') _sync(cb);
+    else return Promisie.promisify(_sync)();
+  }
+  /**
+   * Query method for adapter see _QUERY and _QUERY_WITH_PAGINATION for more details
+   * @param  {Object}  [options={}] Configurable options for query
+   * @param {Boolean} options.paginate When true query will return data in a paginated form
+   * @param  {Function} [cb=false]     Callback argument. When cb is not passed function returns a Promise
+   * @return {Object}          Returns a Promise when cb argument is not passed
+   */
   query(options = {}, cb = false) {
-      let _query = (options && options.paginate) ? _QUERY_WITH_PAGINATION.bind(this) : _QUERY.bind(this);
-      if (typeof cb === 'function') _query(options, cb);
-      else return Promisie.promisify(_query)(options);
-    }
-    /**
-     * Search method for adapter see _SEARCH for more details
-     * @param  {Object}  [options={}] Configurable options for query
-     * @param  {Function} [cb=false]     Callback argument. When cb is not passed function returns a Promise
-     * @return {Object}          Returns a Promise when cb argument is not passed
-     */
+    let _query = (options && options.paginate) ? _QUERY_WITH_PAGINATION.bind(this) : _QUERY.bind(this);
+    if (typeof cb === 'function') _query(options, cb);
+    else return Promisie.promisify(_query)(options);
+  }
+  /**
+   * Search method for adapter see _SEARCH for more details
+   * @param  {Object}  [options={}] Configurable options for query
+   * @param  {Function} [cb=false]     Callback argument. When cb is not passed function returns a Promise
+   * @return {Object}          Returns a Promise when cb argument is not passed
+   */
   search(options = {}, cb = false) {
-      let _search = _SEARCH.bind(this);
-      if (typeof cb === 'function') _search(options, cb);
-      else return Promisie.promisify(_search)(options);
-    }
-    /**
-     * Stream method for adapter see _STREAM for more details
-     * @param  {Object}  [options={}] Configurable options for stream
-     * @param  {Function} [cb=false]     Callback argument. When cb is not passed function returns a Promise
-     * @return {Object}          Returns a Promise when cb argument is not passed
-     */
+    let _search = _SEARCH.bind(this);
+    if (typeof cb === 'function') _search(options, cb);
+    else return Promisie.promisify(_search)(options);
+  }
+  /**
+   * Stream method for adapter see _STREAM for more details
+   * @param  {Object}  [options={}] Configurable options for stream
+   * @param  {Function} [cb=false]     Callback argument. When cb is not passed function returns a Promise
+   * @return {Object}          Returns a Promise when cb argument is not passed
+   */
   stream(options = {}, cb = false) {
-      let _stream = _STREAM.bind(this);
-      if (typeof cb === 'function') _stream(options, cb);
-      else return Promisie.promisify(_stream)(options);
-    }
-    /**
-     * Load method for adapter see _LOAD for more details
-     * @param  {Object}  [options={}] Configurable options for load
-     * @param  {Function} [cb=false]     Callback argument. When cb is not passed function returns a Promise
-     * @return {Object}          Returns a Promise when cb argument is not passed
-     */
+    let _stream = _STREAM.bind(this);
+    if (typeof cb === 'function') _stream(options, cb);
+    else return Promisie.promisify(_stream)(options);
+  }
+  /**
+   * Load method for adapter see _LOAD for more details
+   * @param  {Object}  [options={}] Configurable options for load
+   * @param  {Function} [cb=false]     Callback argument. When cb is not passed function returns a Promise
+   * @return {Object}          Returns a Promise when cb argument is not passed
+   */
   load(options = {}, cb = false) {
-      let _load = _LOAD.bind(this);
-      if (typeof cb === 'function') _load(options, cb);
-      else return Promisie.promisify(_load)(options);
-    }
-    /**
-     * Update method for adapter see _UPDATE, _UPDATED and _UPDATE_ALL for more details
-     * @param  {Object}  [options={}] Configurable options for update
-     * @param {Boolean} options.return_updated If true update method will return the updated document instead of an update status message
-     * @param {Boolean} options.multi If true a multiple document update will be perfomed
-     * @param  {Function} [cb=false]     Callback argument. When cb is not passed function returns a Promise
-     * @return {Object}          Returns a Promise when cb argument is not passed
-     */
+    let _load = _LOAD.bind(this);
+    if (typeof cb === 'function') _load(options, cb);
+    else return Promisie.promisify(_load)(options);
+  }
+  /**
+   * Update method for adapter see _UPDATE, _UPDATED and _UPDATE_ALL for more details
+   * @param  {Object}  [options={}] Configurable options for update
+   * @param {Boolean} options.return_updated If true update method will return the updated document instead of an update status message
+   * @param {Boolean} options.multi If true a multiple document update will be perfomed
+   * @param  {Function} [cb=false]     Callback argument. When cb is not passed function returns a Promise
+   * @return {Object}          Returns a Promise when cb argument is not passed
+   */
   update(options = {}, cb = false) {
-      let _update = (options.multi) ? _UPDATE_ALL.bind(this) : ((options.return_updated) ? _UPDATED.bind(this) : _UPDATE.bind(this));
-      if (typeof cb === 'function') _update(options, cb);
-      else return Promisie.promisify(_update)(options);
-    }
-    /**
-     * Create method for adapter see _CREATE for more details
-     * @param  {Object}  [options={}] Configurable options for create
-     * @param  {Function} [cb=false]     Callback argument. When cb is not passed function returns a Promise
-     * @return {Object}          Returns a Promise when cb argument is not passed
-     */
+    let _update = (options.multi) ? _UPDATE_ALL.bind(this) : ((options.return_updated) ? _UPDATED.bind(this) : _UPDATE.bind(this));
+    if (typeof cb === 'function') _update(options, cb);
+    else return Promisie.promisify(_update)(options);
+  }
+  /**
+   * Create method for adapter see _CREATE for more details
+   * @param  {Object}  [options={}] Configurable options for create
+   * @param  {Function} [cb=false]     Callback argument. When cb is not passed function returns a Promise
+   * @return {Object}          Returns a Promise when cb argument is not passed
+   */
   create(options = {}, cb = false) {
-      let _create = _CREATE.bind(this);
-      if (typeof cb === 'function') _create(options, cb);
-      else return Promisie.promisify(_create)(options);
-    }
-    /**
-     * Delete method for adapter see _DELETE and _DELETED for more details
-     * @param  {Object}  [options={}] Configurable options for create
-     * @param {Boolean} options.return_deleted If true delete method will return the deleted document
-     * @param  {Function} [cb=false]     Callback argument. When cb is not passed function returns a Promise
-     * @return {Object}          Returns a Promise when cb argument is not passed
-     */
+    let _create = _CREATE.bind(this);
+    if (typeof cb === 'function') _create(options, cb);
+    else return Promisie.promisify(_create)(options);
+  }
+  /**
+   * Delete method for adapter see _DELETE and _DELETED for more details
+   * @param  {Object}  [options={}] Configurable options for create
+   * @param {Boolean} options.return_deleted If true delete method will return the deleted document
+   * @param  {Function} [cb=false]     Callback argument. When cb is not passed function returns a Promise
+   * @return {Object}          Returns a Promise when cb argument is not passed
+   */
   delete(options = {}, cb = false) {
-      let _delete = (options.return_deleted) ? _DELETED.bind(this) : _DELETE.bind(this);
-      if (typeof cb === 'function') _delete(options, cb);
-      else return Promisie.promisify(_delete)(options);
-    }
-    /**
-     * Raw query method for adapter see _RAW for more details
-     * @param  {Object}  options Configurable options for raw query
-     * @param  {Function} cb     Callback argument. When cb is not passed function returns a Promise
-     * @return {Object}          Returns a Promise when cb argument is not passed
-     */
+    let _delete = (options.return_deleted) ? _DELETED.bind(this) : _DELETE.bind(this);
+    if (typeof cb === 'function') _delete(options, cb);
+    else return Promisie.promisify(_delete)(options);
+  }
+  /**
+   * Raw query method for adapter see _RAW for more details
+   * @param  {Object}  options Configurable options for raw query
+   * @param  {Function} cb     Callback argument. When cb is not passed function returns a Promise
+   * @return {Object}          Returns a Promise when cb argument is not passed
+   */
   raw(options = {}, cb = false) {
     let _raw = _RAW.bind(this);
     if (typeof cb === 'function') _raw(options, cb);
