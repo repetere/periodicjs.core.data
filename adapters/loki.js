@@ -22,7 +22,7 @@ const _QUERY = function(options, cb) {
   try {
     let Model = options.model || this.model;
     //Iteratively checks if value was passed in options argument and conditionally assigns the default value if not passed in options
-    let { sort, limit, population, fields, skip, } = ['sort', 'limit', 'population', 'fields', 'skip', ].reduce((result, key) => {
+    let { sort, limit, population, fields, skip, } = ['sort', 'limit', 'population', 'fields', 'skip',].reduce((result, key) => {
       if (options[key] && !isNaN(Number(options[key]))) options[key] = Number(options[key]);
       result[key] = options[key] || this[key];
       return result;
@@ -76,7 +76,7 @@ function convertSortObjToOrderArray(sort) {
 
   return Object.keys(sort).map(key => {
     if (sort[key] < 1) { //descending
-      return [key, true, ];
+      return [key, true,];
     } else {
       return key;
     }
@@ -135,7 +135,7 @@ const _QUERY_WITH_PAGINATION = function(options, cb) {
   try {
     let Model = options.model || this.model;
     //Iteratively checks if value was passed in options argument and conditionally assigns the default value if not passed in options
-    let { sort, limit, population, fields, skip, pagelength, query, } = ['sort', 'limit', 'population', 'fields', 'skip', 'pagelength', 'query', ].reduce((result, key) => {
+    let { sort, limit, population, fields, skip, pagelength, query, } = ['sort', 'limit', 'population', 'fields', 'skip', 'pagelength', 'query',].reduce((result, key) => {
       if (options[key] && !isNaN(Number(options[key]))) options[key] = Number(options[key]);
       result[key] = options[key] || this[key];
       return result;
@@ -297,7 +297,7 @@ const _LOAD = function(options, cb) {
     let query;
 
     //Iteratively checks if value was passed in options argument and conditionally assigns the default value if not passed in options
-    let { sort, population, fields, docid, } = ['sort', 'population', 'fields', 'docid', ].reduce((result, key) => {
+    let { sort, population, fields, docid, } = ['sort', 'population', 'fields', 'docid',].reduce((result, key) => {
       if (options[key] && !isNaN(Number(options[key]))) options[key] = Number(options[key]);
       result[key] = options[key] || this[key];
       return result;
@@ -533,10 +533,27 @@ const _DELETE = function(options, cb) {
   try {
     let Model = options.model || this.model;
     let deleteid = options.deleteid || options.id;
-    if (typeof deleteid !== 'string') throw new Error('Must specify "deleteid" or "id" for delete');
-    let object = Model.findObject({ _id: deleteid, });
-    let result = Model.remove(object);
-    cb(null, result);
+    if (Array.isArray(deleteid)) {
+      _QUERY.call(this, {
+        query: {
+          _id: {
+            $in: deleteid,
+          },
+        },
+      }, (err, deleteDocs) => { 
+        if (err) {
+          cb(err);
+        } else {
+          let result = Model.remove(deleteDocs);
+          cb(null, result);
+        }
+      });
+    } else {
+      if (typeof deleteid !== 'string') throw new Error('Must specify "deleteid" or "id" for delete');
+      let object = Model.findObject({ _id: deleteid, });
+      let result = Model.remove(object);
+      cb(null, result);
+    }
   } catch (e) {
     cb(e);
   }
