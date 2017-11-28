@@ -55,8 +55,9 @@ const _QUERY = function(options, cb) {
     if (skip) queryOptions.offset = skip;
     if (limit) queryOptions.limit = limit;
     if (population) {
-      if (population && population.include) queryOptions.include = population.include;
-      else queryOptions.include = population;
+      // console.log('this.db_connection.models', this.db_connection.models);
+      // if (population && population.include) queryOptions.include = population.include;
+      // else queryOptions.include = population;
     }
     // queryOptions.raw = true;
     Model.findAll(queryOptions)
@@ -374,9 +375,16 @@ const _LOAD = function(options, cb) {
     if (sort) queryOptions.order = (!Array.isArray(sort) && typeof sort !== 'string') ?
       convertSortObjToOrderArray(sort) :
       sort;
-    if (population) {
-      if (population && population.include) queryOptions.include = population.include;
-      else queryOptions.include = population;
+      
+      if (population) {
+        // console.log('this.db_connection.models', this.db_connection.models);
+      // if (population && population.include) queryOptions.include = population.include;
+      // else queryOptions.include = population.map(pop => ({
+      //   model: this.db_connection.models[ pop.model ],
+      //   as: pop.as,
+      //   through: pop.through,
+      //   foreignKey: pop.foreignKey,
+      // }));
     }
     Model.findOne(queryOptions)
       .then(result => cb(null, (this.jsonify_results) ?
@@ -441,11 +449,23 @@ const _UPDATE = function(options, cb) {
     let xss_whitelist = (options.xss_whitelist) ? options.xss_whitelist : this.xss_whitelist;
     options.updatedoc = utility.enforceXSSRules(options.updatedoc, xss_whitelist, options);
     let Model = options.model || this.model;
+    let docid = options.docid || this.docid;
     let where = {
-      $or: [{
-        [options.docid || this.docid]: options.id,
-      }, ],
+      $or: [],
     };
+    if ((Array.isArray(docid))) {
+      docid.forEach(d => {
+        if (d === '_id' && validIdIsNumber(options.id)) {
+          where.$or.push({ [ d ]: options.id });
+        } else if(typeof options.id !=='number') {
+          where.$or.push({
+            [ d ]: options.id.toString(),
+          });
+        }
+      });
+    } else {
+      where.$or.push({ [ docid ]: options.id });
+    }
     Promisie.parallel({
       update: () => Model.update(options.updatedoc, (options.query && typeof options.query === 'object') ? {
         limit: 1,
