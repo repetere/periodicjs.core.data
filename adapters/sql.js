@@ -16,7 +16,7 @@ const GENERATE_SELECT = function(fields) {
   return Object.keys(fields).reduce((result, key) => {
     if (fields[key]) {
       if (typeof fields[key] !== 'string') result.push(key);
-      else result.push([key, fields[key], ]);
+      else result.push([key, fields[key],]);
     }
     return result;
   }, []);
@@ -38,17 +38,17 @@ const _QUERY = function(options, cb) {
   try {
     let Model = options.model || this.model;
     //Iteratively checks if value was passed in options argument and conditionally assigns the default value if not passed in options
-    let { sort, limit, population, fields, skip, } = ['sort', 'limit', 'population', 'fields', 'skip', ].reduce((result, key) => {
+    let { sort, limit, population, fields, skip, } = ['sort', 'limit', 'population', 'fields', 'skip',].reduce((result, key) => {
       if (options[key] && !isNaN(Number(options[key]))) options[key] = Number(options[key]);
-      result[key] = options[key] || this[key];
+      result[key] = (typeof options[key]!=='undefined') ? options[key] : this[key];
       return result;
     }, {});
     let queryOptions = {
       where: (options.query && typeof options.query === 'object') ? options.query : {},
     };
-
+    queryOptions.attributes = Object.assign({}, queryOptions.attributes, options.attributes);
     if (Object.keys(queryOptions.where).length === 0) delete queryOptions.where;
-    if (fields) queryOptions.attributes = GENERATE_SELECT(fields);
+    if (fields) queryOptions.attributes = Object.assign({}, queryOptions.attributes, GENERATE_SELECT(fields));
     if (sort) queryOptions.order = (!Array.isArray(sort) && typeof sort !== 'string') ?
       convertSortObjToOrderArray(sort) :
       sort;
@@ -60,6 +60,8 @@ const _QUERY = function(options, cb) {
       // else queryOptions.include = population;
     }
     // queryOptions.raw = true;
+    // const util = require('util');
+    // console.log(util.inspect( queryOptions,{depth:20 }));
     Model.findAll(queryOptions)
       .then(results => cb(null, (this.jsonify_results) ? getJSONResults(results) : results))
       .catch(cb);
@@ -86,7 +88,7 @@ function getOrderFromSortObj(sortVal) {
  * @returns {Array} order argument
  */
 function convertSortObjToOrderArray(sort) {
-  return Object.keys(sort).map(key => [key, getOrderFromSortObj(sort[key]), ]);
+  return Object.keys(sort).map(key => [key, getOrderFromSortObj(sort[key]),]);
 }
 
 /**
@@ -172,7 +174,7 @@ const _QUERY_WITH_PAGINATION = function(options, cb) {
   try {
     let Model = options.model || this.model;
     //Iteratively checks if value was passed in options argument and conditionally assigns the default value if not passed in options
-    let { sort, limit, population, fields, skip, pagelength, query, } = ['sort', 'limit', 'population', 'fields', 'skip', 'pagelength', 'query', ].reduce((result, key) => {
+    let { sort, limit, population, fields, skip, pagelength, query, } = ['sort', 'limit', 'population', 'fields', 'skip', 'pagelength', 'query',].reduce((result, key) => {
       if (options[key] && !isNaN(Number(options[key]))) options[key] = Number(options[key]);
       result[key] = options[key] || this[key];
       return result;
@@ -187,10 +189,9 @@ const _QUERY_WITH_PAGINATION = function(options, cb) {
     Promisie.parallel({
       count: () => {
         return new Promisie((resolve, reject) => {
-          _QUERY.call(this, { query, limit: false }, (err, total) => {
-            if (err) reject(err);
-            else resolve(total.length);
-          });
+          Model.count(query)
+            .then(resolve)
+            .catch(reject);
         });
       },
       pagination: () => {
@@ -215,12 +216,12 @@ const _QUERY_WITH_PAGINATION = function(options, cb) {
         }, current => (current === pagelength && total < limit))
         .then(() => pages)
         .catch(e => Promisie.reject(e));
-      }
+      },
     })
       .then(result => {
         cb(null, Object.assign({}, result.pagination, {
           collection_count: result.count,
-          collection_pages: Math.ceil(result.count / ((pagelength <= limit) ? pagelength : limit))
+          collection_pages: Math.ceil(result.count / ((pagelength <= limit) ? pagelength : limit)),
         }));
       })
       .catch(cb);
@@ -335,7 +336,7 @@ const _LOAD = function(options, cb) {
     let query;
     let Model = options.model || this.model;
     //Iteratively checks if value was passed in options argument and conditionally assigns the default value if not passed in options
-    let { sort, population, fields, docid, } = ['sort', 'population', 'fields', 'docid', ].reduce((result, key) => {
+    let { sort, population, fields, docid, } = ['sort', 'population', 'fields', 'docid',].reduce((result, key) => {
       if (options[key] && !isNaN(Number(options[key]))) options[key] = Number(options[key]);
       result[key] = options[key] || this[key];
       return result;
@@ -376,16 +377,18 @@ const _LOAD = function(options, cb) {
       convertSortObjToOrderArray(sort) :
       sort;
       
-      if (population) {
-        // console.log('this.db_connection.models', this.db_connection.models);
+    if (population) {
       // if (population && population.include) queryOptions.include = population.include;
       // else queryOptions.include = population.map(pop => ({
-      //   model: this.db_connection.models[ pop.model ],
-      //   as: pop.as,
-      //   through: pop.through,
-      //   foreignKey: pop.foreignKey,
-      // }));
+        //   model: this.db_connection.models[ pop.model ],
+        //   as: pop.as,
+        //   through: pop.through,
+        //   foreignKey: pop.foreignKey,
+        // }));
+      // console.log('this.db_connection.models', this.db_connection.models,'queryOptions.include',queryOptions.include,{queryOptions, population});
     }
+    const util = require('util');
+    console.log(util.inspect(queryOptions, { depth:20,  }));
     Model.findOne(queryOptions)
       .then(result => cb(null, (this.jsonify_results) ?
         getPlainResult(result) :
@@ -456,7 +459,7 @@ const _UPDATE = function(options, cb) {
     if ((Array.isArray(docid))) {
       docid.forEach(d => {
         if (d === '_id' && validIdIsNumber(options.id)) {
-          where.$or.push({ [ d ]: options.id });
+          where.$or.push({ [ d ]: options.id, });
         } else if(typeof options.id !=='number') {
           where.$or.push({
             [ d ]: options.id.toString(),
@@ -464,7 +467,7 @@ const _UPDATE = function(options, cb) {
         }
       });
     } else {
-      where.$or.push({ [ docid ]: options.id });
+      where.$or.push({ [ docid ]: options.id, });
     }
     Promisie.parallel({
       update: () => Model.update(options.updatedoc, (options.query && typeof options.query === 'object') ? {
@@ -580,14 +583,14 @@ const _DELETE = function(options, cb) {
     let deleteid = options.deleteid || options.id;
     if (typeof deleteid !== 'string' && typeof deleteid !== 'number') throw new Error('Must specify "deleteid" or "id" for delete');
     Model.destroy({
-        where: [{
-          id: deleteid,
-        }, {
-          [options.docid || this.docid]: deleteid,
-        }, ],
-        force: options.force,
-        limit: 1,
-      })
+      where: [{
+        id: deleteid,
+      }, {
+        [options.docid || this.docid]: deleteid,
+      },],
+      force: options.force,
+      limit: 1,
+    })
       .then(result => cb(null, result))
       .catch(cb);
   } catch (e) {
