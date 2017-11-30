@@ -58,6 +58,7 @@ const _QUERY = function(options, cb) {
       // console.log('this.db_connection.models', this.db_connection.models);
       // if (population && population.include) queryOptions.include = population.include;
       // else queryOptions.include = population;
+      queryOptions.include = [{ all: true }]
     }
     // queryOptions.raw = true;
     // const util = require('util');
@@ -377,7 +378,14 @@ const _LOAD = function(options, cb) {
       convertSortObjToOrderArray(sort) :
       sort;
       
-    if (population) {
+    if (population && Array.isArray(population)) {
+        // queryOptions.include = population.map(pop => ({
+        //   model: this.db_connection.models[ pop.model ],
+        //   as: pop.as,
+        //   through: pop.through,
+        //   foreignKey: pop.foreignKey,
+        // }));
+        queryOptions.include = [{ all: true }]
       // if (population && population.include) queryOptions.include = population.include;
       // else queryOptions.include = population.map(pop => ({
         //   model: this.db_connection.models[ pop.model ],
@@ -387,8 +395,9 @@ const _LOAD = function(options, cb) {
         // }));
       // console.log('this.db_connection.models', this.db_connection.models,'queryOptions.include',queryOptions.include,{queryOptions, population});
     }
-    const util = require('util');
-    console.log(util.inspect(queryOptions, { depth:20,  }));
+    // const util = require('util');
+    // console.log('queryOptions',util.inspect(queryOptions, { depth:20,  }));
+    // console.log('Model',util.inspect(Model, { depth:20,  }));
     Model.findOne(queryOptions)
       .then(result => cb(null, (this.jsonify_results) ?
         getPlainResult(result) :
@@ -452,7 +461,9 @@ const _UPDATE = function(options, cb) {
     let xss_whitelist = (options.xss_whitelist) ? options.xss_whitelist : this.xss_whitelist;
     options.updatedoc = utility.enforceXSSRules(options.updatedoc, xss_whitelist, options);
     let Model = options.model || this.model;
-    let docid = options.docid || this.docid;
+    let docid = (Array.isArray(options.docid) || typeof options.docid === 'string')
+      ? options.docid
+      : this.docid;
     let where = {
       $or: [],
     };
@@ -469,6 +480,7 @@ const _UPDATE = function(options, cb) {
     } else {
       where.$or.push({ [ docid ]: options.id, });
     }
+    // console.log({docid},'this.docid',this.docid,'where',JSON.stringify(where, null, 2));
     Promisie.parallel({
       update: () => Model.update(options.updatedoc, (options.query && typeof options.query === 'object') ? {
         limit: 1,
@@ -674,8 +686,11 @@ const SQL_ADAPTER = class SQL_Adapter {
    * @param {string[]} [options.xss_whitelist=false] Configuration for XSS whitelist package. If false XSS whitelisting will be ignored
    */
   constructor(options = {}) {
+    // console.log('options.db_connection', options.db_connection);
+    // console.log("INITIAL typeof options.db_connection", typeof options.db_connection,{options});
+    
     if (options.db_connection && typeof options.db_connection === 'object') {
-      if (options.db_connection.models && options.db_connection.define) this.db_connection = options.db_connection;
+      if (options.db_connection.models && options.db_connection.config) this.db_connection = options.db_connection;
       else if (Array.isArray(options.db_connection)) {
         let connectionOptions = options.db_connection;
         this.db_connection = new Sequelize(...connectionOptions);
@@ -684,7 +699,13 @@ const SQL_ADAPTER = class SQL_Adapter {
         this.db_connection = new Sequelize(db_name, db_user, db_password, db_options);
       }
     }
-    this.db_connection = (options.db_connection && typeof options.db_connection === 'object' && options.db_connection.models && options.db_connection.define) ? options.db_connection : new Sequelize(options.db_connection);
+    // console.log("typeof options.db_connection === 'object'", typeof options.db_connection === 'object');
+    // console.log("typeof options.db_connection", typeof options.db_connection);
+    this.db_connection = (options.db_connection && typeof options.db_connection === 'object' && options.db_connection.models && options.db_connection.config)
+      ? options.db_connection
+      : new Sequelize(options.db_connection);
+    // console.log('this.db_connection.models', this.db_connection.models);
+    // console.log('options', options);
     this.docid = options.docid || 'id';
     this.jsonify_results = (typeof options.jsonify_results === 'boolean') ? options.jsonify_results : true;
     if (options.model && typeof options.model === 'object') {
@@ -701,7 +722,9 @@ const SQL_ADAPTER = class SQL_Adapter {
     this.fields = options.fields;
     this.pagelength = options.pagelength || 15;
     this.cache = options.cache;
-    this.changeset = (options.db_connection) ? require(path.join(__dirname, '../changeset/index')).sql(this.db_connection) : false;
+    this.changeset = (options.db_connection && options.track_changes !== false)
+      ? require(path.join(__dirname, '../changeset/index')).sql(this.db_connection)
+      : false;
     this.track_changes = (options.track_changes === false || this.changeset === false) ? false : true;
     this.xss_whitelist = options.xss_whitelist || xss_default_whitelist;
     this._useCache = (options.useCache && options.cache) ? true : false;

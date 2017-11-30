@@ -49,7 +49,7 @@
     "mongoose": "~4.4.14",
     "pg": "^6.2.2",
     "promisie": "^1.6.1",
-    "sequelize": "~3.28.0"
+    "sequelize": "^4.23.2"
   },
   "directories": {},
   "dist": {
@@ -94,6 +94,6 @@
   "scripts": {
     "test": "mocha -R spec --recursive"
   },
-  "version": "0.7.8",
+  "version": "0.8.0",
   "license": "MIT"
 }
