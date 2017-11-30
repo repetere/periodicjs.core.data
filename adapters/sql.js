@@ -703,12 +703,15 @@ const SQL_ADAPTER = class SQL_Adapter {
     // console.log("typeof options.db_connection", typeof options.db_connection);
     this.db_connection = (options.db_connection && typeof options.db_connection === 'object' && options.db_connection.models && options.db_connection.config)
       ? options.db_connection
-      : new Sequelize(options.db_connection);
+      : (!options.model) ? new Sequelize(options.db_connection) : options.db_connection;
     // console.log('this.db_connection.models', this.db_connection.models);
     // console.log('options', options);
     this.docid = options.docid || 'id';
     this.jsonify_results = (typeof options.jsonify_results === 'boolean') ? options.jsonify_results : true;
-    if (options.model && typeof options.model === 'object') {
+    // console.log('Object.keys(options.model)',Object.keys(options.model))
+    if (options.model && typeof options.model === 'function') {
+      this.model = options.model;
+    } else if (options.model && typeof options.model === 'object') {
       if (Array.isArray(options.model)) this.model = this.db_connection.define(...options.model);
       else this.model = options.model;
     } else this.model = this.db_connection.models[options.model];
