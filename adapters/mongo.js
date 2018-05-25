@@ -526,6 +526,9 @@ const MONGO_ADAPTER = class Mongo_Adapter {
       if (Array.isArray(options.search)) this.searchfields = options.search;
       else if (typeof options.search === 'string') this.searchfields = options.search.split(',');
       else this.searchfields = [];
+      if(Array.isArray(options.plugins)) {
+        options.plugins.forEach(plugin => {this.model.schema.plugin(plugin.func, plugin.options)});
+      };
       this.population = options.population;
       this.fields = options.fields;
       this.pagelength = options.pagelength || 15;
