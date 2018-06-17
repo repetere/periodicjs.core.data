@@ -16,7 +16,7 @@ const GENERATE_SELECT = function(fields) {
   return Object.keys(fields).reduce((result, key) => {
     if (fields[key]) {
       if (typeof fields[key] !== 'string') result.push(key);
-      else result.push([key, fields[key],]);
+      else result.push([key, fields[key], ]);
     }
     return result;
   }, []);
@@ -38,7 +38,7 @@ const _QUERY = function(options, cb) {
   try {
     let Model = options.model || this.model;
     //Iteratively checks if value was passed in options argument and conditionally assigns the default value if not passed in options
-    let { sort, limit, population, fields, skip, } = ['sort', 'limit', 'population', 'fields', 'skip',].reduce((result, key) => {
+    let { sort, limit, population, fields, skip, } = ['sort', 'limit', 'population', 'fields', 'skip', ].reduce((result, key) => {
       if (options[key] && !isNaN(Number(options[key]))) options[key] = Number(options[key]);
       result[key] = (typeof options[key]!=='undefined') ? options[key] : this[key];
       return result;
@@ -58,7 +58,7 @@ const _QUERY = function(options, cb) {
       // console.log('this.db_connection.models', this.db_connection.models);
       // if (population && population.include) queryOptions.include = population.include;
       // else queryOptions.include = population;
-      queryOptions.include = [{ all: true }]
+      queryOptions.include = [{ all: true, },];
     }
     // queryOptions.raw = true;
     // const util = require('util');
@@ -89,7 +89,7 @@ function getOrderFromSortObj(sortVal) {
  * @returns {Array} order argument
  */
 function convertSortObjToOrderArray(sort) {
-  return Object.keys(sort).map(key => [key, getOrderFromSortObj(sort[key]),]);
+  return Object.keys(sort).map(key => [key, getOrderFromSortObj(sort[key]), ]);
 }
 
 /**
@@ -139,13 +139,13 @@ const _STREAM = function(options, cb) {
           let task = setImmediate(() => {
             if (i === documents.length - 1) querystream.end(
               (this.jsonify_results) ?
-              getPlainResult(documents[i]) :
-              documents[i]
+                getPlainResult(documents[i]) :
+                documents[i]
             );
             else querystream.write(
               (this.jsonify_results) ?
-              getPlainResult(documents[i]) :
-              documents[i]
+                getPlainResult(documents[i]) :
+                documents[i]
             );
             clearImmediate(task);
           });
@@ -175,7 +175,7 @@ const _QUERY_WITH_PAGINATION = function(options, cb) {
   try {
     let Model = options.model || this.model;
     //Iteratively checks if value was passed in options argument and conditionally assigns the default value if not passed in options
-    let { sort, limit, population, fields, skip, pagelength, query, } = ['sort', 'limit', 'population', 'fields', 'skip', 'pagelength', 'query',].reduce((result, key) => {
+    let { sort, limit, population, fields, skip, pagelength, query, } = ['sort', 'limit', 'population', 'fields', 'skip', 'pagelength', 'query', ].reduce((result, key) => {
       if (options[key] && !isNaN(Number(options[key]))) options[key] = Number(options[key]);
       result[key] = options[key] || this[key];
       return result;
@@ -215,8 +215,8 @@ const _QUERY_WITH_PAGINATION = function(options, cb) {
             });
           });
         }, current => (current === pagelength && total < limit))
-        .then(() => pages)
-        .catch(e => Promisie.reject(e));
+          .then(() => pages)
+          .catch(e => Promisie.reject(e));
       },
     })
       .then(result => {
@@ -337,7 +337,7 @@ const _LOAD = function(options, cb) {
     let query;
     let Model = options.model || this.model;
     //Iteratively checks if value was passed in options argument and conditionally assigns the default value if not passed in options
-    let { sort, population, fields, docid, } = ['sort', 'population', 'fields', 'docid',].reduce((result, key) => {
+    let { sort, population, fields, docid, } = ['sort', 'population', 'fields', 'docid', ].reduce((result, key) => {
       if (options[key] && !isNaN(Number(options[key]))) options[key] = Number(options[key]);
       result[key] = options[key] || this[key];
       return result;
@@ -379,20 +379,20 @@ const _LOAD = function(options, cb) {
       sort;
       
     if (population && Array.isArray(population)) {
-        // queryOptions.include = population.map(pop => ({
-        //   model: this.db_connection.models[ pop.model ],
-        //   as: pop.as,
-        //   through: pop.through,
-        //   foreignKey: pop.foreignKey,
-        // }));
-        queryOptions.include = [{ all: true }]
+      // queryOptions.include = population.map(pop => ({
+      //   model: this.db_connection.models[ pop.model ],
+      //   as: pop.as,
+      //   through: pop.through,
+      //   foreignKey: pop.foreignKey,
+      // }));
+      queryOptions.include = [{ all: true, },];
       // if (population && population.include) queryOptions.include = population.include;
       // else queryOptions.include = population.map(pop => ({
-        //   model: this.db_connection.models[ pop.model ],
-        //   as: pop.as,
-        //   through: pop.through,
-        //   foreignKey: pop.foreignKey,
-        // }));
+      //   model: this.db_connection.models[ pop.model ],
+      //   as: pop.as,
+      //   through: pop.through,
+      //   foreignKey: pop.foreignKey,
+      // }));
       // console.log('this.db_connection.models', this.db_connection.models,'queryOptions.include',queryOptions.include,{queryOptions, population});
     }
     // const util = require('util');
@@ -439,23 +439,23 @@ const _UPDATE = function(options, cb) {
           if (this.changeset[IS_SYNCED]) return Promisie.resolve(true);
           return this.sync();
         })()
-        .then(() => {
-          return Promisie.map(Object.keys(changeset), (key) => {
-            return this.changeset.create({
-              parent_document_id: options.id,
-              field_name: key,
-              original: (changeset[key].length > 1) ? changeset[key][0] : 'new value',
-              update: (changeset[key].length < 2) ? changeset[0] : ((changeset[key].length === 2) ? changeset[key][1] : 'deleted value'),
+          .then(() => {
+            return Promisie.map(Object.keys(changeset), (key) => {
+              return this.changeset.create({
+                parent_document_id: options.id,
+                field_name: key,
+                original: (changeset[key].length > 1) ? changeset[key][0] : 'new value',
+                update: (changeset[key].length < 2) ? changeset[0] : ((changeset[key].length === 2) ? changeset[key][1] : 'deleted value'),
+              });
             });
+          })
+          .then(result => {
+            if (options.ensure_changes) callback(null, (this.jsonify_results) ?
+              getPlainResult(result) :
+              result);
+          }, e => {
+            if (options.ensure_changes) callback(e);
           });
-        })
-        .then(result => {
-          if (options.ensure_changes) callback(null, (this.jsonify_results) ?
-            getPlainResult(result) :
-            result);
-        }, e => {
-          if (options.ensure_changes) callback(e);
-        });
       }
     };
     let xss_whitelist = (options.xss_whitelist) ? options.xss_whitelist : this.xss_whitelist;
@@ -491,10 +491,10 @@ const _UPDATE = function(options, cb) {
       }),
       changes: () => Promisie.promisify(generateChanges)(),
     })
-    .then(result => {
-      if (options.ensure_changes) cb(null, result);
-      else cb(null, result.update);
-    }, cb);
+      .then(result => {
+        if (options.ensure_changes) cb(null, result);
+        else cb(null, result.update);
+      }, cb);
   } catch (e) {
     cb(e);
   }
@@ -594,12 +594,28 @@ const _DELETE = function(options, cb) {
     let Model = options.model || this.model;
     let deleteid = options.deleteid || options.id;
     if (typeof deleteid !== 'string' && typeof deleteid !== 'number') throw new Error('Must specify "deleteid" or "id" for delete');
+    const docid = options.docid || this.docid || '_id';
+    const deleteWhere = [];
+    if (Array.isArray(docid)) {
+      deleteWhere.push(...docid
+        .map(docidname => ({
+          [ docidname ]: deleteid,
+        }))
+      );
+    } else if (docid.indexOf(',')!==-1) {
+      deleteWhere.push(...docid
+        .split(',')
+        .map(docidname => ({
+          [ docidname ]: deleteid,
+        }))
+      );
+    } else {
+      deleteWhere.push({
+        [ docid ]: deleteid,
+      });
+    }
     Model.destroy({
-      where: [{
-        id: deleteid,
-      }, {
-        [options.docid || this.docid]: deleteid,
-      },],
+      where: deleteWhere,
       force: options.force,
       limit: 1,
     })
