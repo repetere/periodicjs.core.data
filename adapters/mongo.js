@@ -102,41 +102,41 @@ const _QUERY_WITH_PAGINATION = function(options, cb) {
     let index = 0;
     skip = (typeof skip === 'number') ? skip : 0;
     Promisie.parallel({
-        count: () => {
+      count: () => {
+        return new Promisie((resolve, reject) => {
+          Model.count(query, (err, count) => {
+            if (err) reject(err);
+            else resolve(count);
+          });
+        });
+      },
+      pagination: () => {
+        return Promisie.doWhilst(() => {
           return new Promisie((resolve, reject) => {
-            Model.count(query, (err, count) => {
+            _QUERY.call(this, { query, sort, limit: (total + pagelength <= limit) ? pagelength : (limit - total), fields, skip, population, model: Model, }, (err, data) => {
               if (err) reject(err);
-              else resolve(count);
+              else {
+                skip += data.length;
+                total += data.length;
+                pages.total += data.length;
+                pages.total_pages++;
+                pages[index++] = {
+                  documents: data,
+                  count: data.length,
+                };
+                resolve(data.length);
+              }
             });
           });
-        },
-        pagination: () => {
-          return Promisie.doWhilst(() => {
-              return new Promisie((resolve, reject) => {
-                _QUERY.call(this, { query, sort, limit: (total + pagelength <= limit) ? pagelength : (limit - total), fields, skip, population, model: Model, }, (err, data) => {
-                  if (err) reject(err);
-                  else {
-                    skip += data.length;
-                    total += data.length;
-                    pages.total += data.length;
-                    pages.total_pages++;
-                    pages[index++] = {
-                      documents: data,
-                      count: data.length,
-                    };
-                    resolve(data.length);
-                  }
-                });
-              });
-            }, current => (current === pagelength && total < limit))
-            .then(() => pages)
-            .catch(e => Promisie.reject(e));
-        }
-      })
+        }, current => (current === pagelength && total < limit))
+          .then(() => pages)
+          .catch(e => Promisie.reject(e));
+      },
+    })
       .then(result => {
         cb(null, Object.assign({}, result.pagination, {
           collection_count: result.count,
-          collection_pages: Math.ceil(result.count / ((pagelength <= limit) ? pagelength : limit))
+          collection_pages: Math.ceil(result.count / ((pagelength <= limit) ? pagelength : limit)),
         }));
       })
       .catch(cb);
@@ -198,7 +198,9 @@ const _SEARCH = function(options, cb) {
     if (typeof options.values === 'string') {
       let split = options.values.split(',');
       let isObjectIds = (split.filter(utility.isObjectId).length === split.length);
-      if (isObjectIds) { query[toplevel].push({ '_id': { $in: split, }, }); } else if (Array.isArray(docid)) {
+      if (isObjectIds) {
+        query[toplevel].push({ '_id': { $in: split, }, }); 
+      } else if (Array.isArray(docid)) {
         docid.forEach(d => {
           if (d === '_id') {
             if (utility.isObjectId(options.query)) {
@@ -342,36 +344,70 @@ const _UPDATE = function(options, cb) {
     };
     let depopulate = (options.depopulate === false) ? false : true;
     let generateChanges = (callback) => {
-      if (!options.track_changes || (options.track_changes && !options.ensure_changes)) callback();
+      if (!options.track_changes || (options.track_changes && !options.ensure_changes)) {
+        callback();
+      }
       if (options.track_changes) {
-        let changeset = (!options.isPatch) ? utility.diff(changesetData.original, changesetData.update, depopulate) : options.updatedoc;
-        this.changeset.create({
-          parent_document: { id: options.id, },
-          changeset: changeset,
-        }, (err, result) => {
-          if (options.ensure_changes) {
-            if (err) callback(err);
-            else callback(null, result);
-          }
-        });
+        Promise.resolve(options.originalrevision)
+          .then(originalDoc => {
+            if (originalDoc) {
+              return changesetData.original;
+            } else {
+              return this.load({ docid: options.id, });
+            }
+          })
+          .then(originalDoc => {
+            changesetData.original = (typeof originalDoc.toObject === 'function')
+              ? originalDoc.toObject()
+              : originalDoc;
+            // console.log({ originalDoc });
+            let changeset = (!options.isPatch) ? utility.diff(changesetData.original, changesetData.update, depopulate) : options.updatedoc;
+            this.changeset.create({
+              parent_document: { id: options.id, },
+              changeset: changeset,
+            }, (err, result) => {
+              if (options.ensure_changes) {
+                if (err) callback(err);
+                else callback(null, result);
+              }
+            });
+          })
+          .catch(callback);
       }
     };
     let usePatch = options.isPatch;
     let xss_whitelist = (options.xss_whitelist) ? options.xss_whitelist : this.xss_whitelist;
     let originalId = options.updatedoc._id;
+    options.updatedoc.updatedat = new Date();
     options.updatedoc = (depopulate) ? utility.depopulate(options.updatedoc) : options.updatedoc;
     options.updatedoc._id = originalId;
     options.updatedoc = utility.enforceXSSRules(options.updatedoc, xss_whitelist, options);
     let updateOperation = (usePatch) ? GENERATE_PATCH(options.updatedoc) : GENERATE_PUT(options.updatedoc);
     let Model = options.model || this.model;
-    Promisie.parallel({
-        update: Promisie.promisify(Model.update, Model)({ _id: options.id, }, updateOperation),
-        changes: Promisie.promisify(generateChanges)(),
+    Promise.resolve(options.originalrevision)
+      .then(originalDoc => {
+        if (originalDoc) {
+          return changesetData.original;
+        } else if(options.track_changes) {
+          return this.load({ docid: options.id, });
+        } else {
+          return {};
+        }
       })
-      .then(result => {
-        if (options.ensure_changes) cb(null, result);
-        else cb(null, result.update);
-      }, cb);
+      .then(originalDoc => {
+        changesetData.original = (typeof originalDoc.toObject === 'function')
+          ? originalDoc.toObject()
+          : originalDoc;
+        Promisie.parallel({
+          update: Promisie.promisify(Model.update, Model)({ _id: options.id, }, updateOperation),
+          changes: Promisie.promisify(generateChanges)(),
+        })
+          .then(result => {
+            if (options.ensure_changes) cb(null, result);
+            else cb(null, result.update);
+          }, cb);
+      })
+      .catch(cb);
   } catch (e) {
     cb(e);
   }
@@ -443,8 +479,8 @@ const _CREATE = function(options, cb) {
     let xss_whitelist = (options.xss_whitelist) ? options.xss_whitelist : this.xss_whitelist;
     if (Array.isArray(newdoc) && options.bulk_create) {
       Promisie.map(newdoc, (doc) => {
-          return Promisie.promisify(Model.create, Model)(utility.enforceXSSRules(doc, xss_whitelist, options));
-        })
+        return Promisie.promisify(Model.create, Model)(utility.enforceXSSRules(doc, xss_whitelist, options));
+      })
         .then(created => cb(null, created))
         .catch(cb);
     } else Model.create(utility.enforceXSSRules(newdoc, xss_whitelist, (options.newdoc) ? options : undefined), cb);
@@ -517,28 +553,31 @@ const MONGO_ADAPTER = class Mongo_Adapter {
    * @param {string[]} [options.xss_whitelist=false] Configuration for XSS whitelist package. If false XSS whitelisting will be ignored
    */
   constructor(options = {}) {
-      this.db_connection = options.db_connection || mongoose;
-      this.docid = options.docid; //previously docnamelookup
-      this.model = (typeof options.model === 'string') ? this.db_connection.model(options.model) : options.model;
-      this.sort = options.sort || '-createdat';
-      this.limit = options.limit || 500;
-      this.skip = options.skip || 0;
-      if (Array.isArray(options.search)) this.searchfields = options.search;
-      else if (typeof options.search === 'string') this.searchfields = options.search.split(',');
-      else this.searchfields = [];
-      if(Array.isArray(options.plugins)) {
-        options.plugins.forEach(plugin => {this.model.schema.plugin(plugin.func, plugin.options)});
-      };
-      this.population = options.population;
-      this.fields = options.fields;
-      this.pagelength = options.pagelength || 15;
-      this.cache = options.cache;
-      this.track_changes = (options.track_changes === false) ? false : true;
-      this.changeset = (options.db_connection) ? require(path.join(__dirname, '../changeset/index')).mongo(this.db_connection) : require(path.join(__dirname, '../changeset/index')).mongo_default;
-      this.xss_whitelist = options.xss_whitelist || xss_default_whitelist;
-      this._useCache = (options.useCache && options.cache) ? true : false;
+    this.db_connection = options.db_connection || mongoose;
+    this.docid = options.docid; //previously docnamelookup
+    this.model = (typeof options.model === 'string') ? this.db_connection.model(options.model) : options.model;
+    this.sort = options.sort || '-createdat';
+    this.limit = options.limit || 500;
+    this.skip = options.skip || 0;
+    if (Array.isArray(options.search)) this.searchfields = options.search;
+    else if (typeof options.search === 'string') this.searchfields = options.search.split(',');
+    else this.searchfields = [];
+    if(Array.isArray(options.plugins)) {
+      options.plugins.forEach(plugin => {
+        this.model.schema.plugin(plugin.func, plugin.options)
+        ;
+      });
     }
-    /**
+    this.population = options.population;
+    this.fields = options.fields;
+    this.pagelength = options.pagelength || 15;
+    this.cache = options.cache;
+    this.track_changes = (options.track_changes === false) ? false : true;
+    this.changeset = (options.db_connection) ? require(path.join(__dirname, '../changeset/index')).mongo(this.db_connection) : require(path.join(__dirname, '../changeset/index')).mongo_default;
+    this.xss_whitelist = options.xss_whitelist || xss_default_whitelist;
+    this._useCache = (options.useCache && options.cache) ? true : false;
+  }
+  /**
      * Query method for adapter see _QUERY and _QUERY_WITH_PAGINATION for more details
      * @param  {Object}  [options={}] Configurable options for query
      * @param {Boolean} options.paginate When true query will return data in a paginated form
@@ -546,44 +585,44 @@ const MONGO_ADAPTER = class Mongo_Adapter {
      * @return {Object}          Returns a Promise when cb argument is not passed
      */
   query(options = {}, cb = false) {
-      let _query = (options && options.paginate) ? _QUERY_WITH_PAGINATION.bind(this) : _QUERY.bind(this);
-      if (typeof cb === 'function') _query(options, cb);
-      else return Promisie.promisify(_query)(options);
-    }
-    /**
+    let _query = (options && options.paginate) ? _QUERY_WITH_PAGINATION.bind(this) : _QUERY.bind(this);
+    if (typeof cb === 'function') _query(options, cb);
+    else return Promisie.promisify(_query)(options);
+  }
+  /**
      * Search method for adapter see _SEARCH for more details
      * @param  {Object}  [options={}] Configurable options for query
      * @param  {Function} [cb=false]     Callback argument. When cb is not passed function returns a Promise
      * @return {Object}          Returns a Promise when cb argument is not passed
      */
   search(options = {}, cb = false) {
-      let _search = _SEARCH.bind(this);
-      if (typeof cb === 'function') _search(options, cb);
-      else return Promisie.promisify(_search)(options);
-    }
-    /**
+    let _search = _SEARCH.bind(this);
+    if (typeof cb === 'function') _search(options, cb);
+    else return Promisie.promisify(_search)(options);
+  }
+  /**
      * Stream method for adapter see _STREAM for more details
      * @param  {Object}  [options={}] Configurable options for stream
      * @param  {Function} [cb=false]     Callback argument. When cb is not passed function returns a Promise
      * @return {Object}          Returns a Promise when cb argument is not passed
      */
   stream(options = {}, cb = false) {
-      let _stream = _STREAM.bind(this);
-      if (typeof cb === 'function') _stream(options, cb);
-      else return Promisie.promisify(_stream)(options);
-    }
-    /**
+    let _stream = _STREAM.bind(this);
+    if (typeof cb === 'function') _stream(options, cb);
+    else return Promisie.promisify(_stream)(options);
+  }
+  /**
      * Load method for adapter see _LOAD for more details
      * @param  {Object}  [options={}] Configurable options for load
      * @param  {Function} [cb=false]     Callback argument. When cb is not passed function returns a Promise
      * @return {Object}          Returns a Promise when cb argument is not passed
      */
   load(options = {}, cb = false) {
-      let _load = _LOAD.bind(this);
-      if (typeof cb === 'function') _load(options, cb);
-      else return Promisie.promisify(_load)(options);
-    }
-    /**
+    let _load = _LOAD.bind(this);
+    if (typeof cb === 'function') _load(options, cb);
+    else return Promisie.promisify(_load)(options);
+  }
+  /**
      * Update method for adapter see _UPDATE, _UPDATED and _UPDATE_ALL for more details
      * @param  {Object}  [options={}] Configurable options for update
      * @param {Boolean} options.return_updated If true update method will return the updated document instead of an update status message
@@ -592,22 +631,22 @@ const MONGO_ADAPTER = class Mongo_Adapter {
      * @return {Object}          Returns a Promise when cb argument is not passed
      */
   update(options = {}, cb = false) {
-      let _update = (options.multi) ? _UPDATE_ALL.bind(this) : ((options.return_updated) ? _UPDATED.bind(this) : _UPDATE.bind(this));
-      if (typeof cb === 'function') _update(options, cb);
-      else return Promisie.promisify(_update)(options);
-    }
-    /**
+    let _update = (options.multi) ? _UPDATE_ALL.bind(this) : ((options.return_updated) ? _UPDATED.bind(this) : _UPDATE.bind(this));
+    if (typeof cb === 'function') _update(options, cb);
+    else return Promisie.promisify(_update)(options);
+  }
+  /**
      * Create method for adapter see _CREATE for more details
      * @param  {Object}  [options={}] Configurable options for create
      * @param  {Function} [cb=false]     Callback argument. When cb is not passed function returns a Promise
      * @return {Object}          Returns a Promise when cb argument is not passed
      */
   create(options = {}, cb = false) {
-      let _create = _CREATE.bind(this);
-      if (typeof cb === 'function') _create(options, cb);
-      else return Promisie.promisify(_create)(options);
-    }
-    /**
+    let _create = _CREATE.bind(this);
+    if (typeof cb === 'function') _create(options, cb);
+    else return Promisie.promisify(_create)(options);
+  }
+  /**
      * Delete method for adapter see _DELETE and _DELETED for more details
      * @param  {Object}  [options={}] Configurable options for create
      * @param {Boolean} options.return_deleted If true delete method will return the deleted document

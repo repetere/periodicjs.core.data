@@ -459,6 +459,7 @@ const _UPDATE = function(options, cb) {
       }
     };
     let xss_whitelist = (options.xss_whitelist) ? options.xss_whitelist : this.xss_whitelist;
+    options.updatedoc.updatedat = new Date();
     options.updatedoc = utility.enforceXSSRules(options.updatedoc, xss_whitelist, options);
     let Model = options.model || this.model;
     let docid = (Array.isArray(options.docid) || typeof options.docid === 'string')
@@ -481,20 +482,38 @@ const _UPDATE = function(options, cb) {
       where.$or.push({ [ docid ]: options.id, });
     }
     // console.log({docid},'this.docid',this.docid,'where',JSON.stringify(where, null, 2));
-    Promisie.parallel({
-      update: () => Model.update(options.updatedoc, (options.query && typeof options.query === 'object') ? {
-        limit: 1,
-        where: options.query,
-      } : {
-        where,
-        limit: 1,
-      }),
-      changes: () => Promisie.promisify(generateChanges)(),
-    })
-      .then(result => {
-        if (options.ensure_changes) cb(null, result);
-        else cb(null, result.update);
-      }, cb);
+    Promise.resolve(options.originalrevision)
+      .then(originalDoc => {
+        if (originalDoc) {
+          return changesetData.original;
+        } else if (options.track_changes) {
+          return this.load({ docid: options.id, });
+        } else {
+          return {};
+        }
+      })
+      .then(originalDoc => {
+        changesetData.original = (typeof originalDoc.toObject === 'function')
+          ? originalDoc.toObject()
+          : originalDoc;
+        
+        Promisie.parallel({
+          update: () => Model.update(options.updatedoc, (options.query && typeof options.query === 'object') ? {
+            limit: 1,
+            where: options.query,
+          } : {
+            where,
+            limit: 1,
+          }),
+          changes: () => Promisie.promisify(generateChanges)(),
+        })
+          .then(result => {
+            if (options.ensure_changes) cb(null, result);
+            else cb(null, result.update);
+          }, cb);
+        
+      })
+      .catch(cb);
   } catch (e) {
     cb(e);
   }
