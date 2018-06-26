@@ -360,7 +360,7 @@ const _LOAD = function(options, cb) {
           }
         } else {
           query.$or.push({
-            [d]: options.query,
+            [d]: options.query.toString(),
           });
         }
       });
@@ -369,6 +369,9 @@ const _LOAD = function(options, cb) {
         [docid || '_id']: options.query,
       };
     }
+    // console.log('query', query);
+    // if(query.$or) throw new Error('find callee')
+
     let queryOptions = {
       where: query,
     };
