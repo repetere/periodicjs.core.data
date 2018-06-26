@@ -487,7 +487,7 @@ const _UPDATE = function(options, cb) {
         if (originalDoc) {
           return changesetData.original;
         } else if (options.track_changes) {
-          return this.load({ docid: options.id, });
+          return this.load({ query: options.id, });
         } else {
           return {};
         }
@@ -741,7 +741,7 @@ const SQL_ADAPTER = class SQL_Adapter {
       : (!options.model) ? new Sequelize(options.db_connection) : options.db_connection;
     // console.log('this.db_connection.models', this.db_connection.models);
     // console.log('options', options);
-    this.docid = options.docid || 'id';
+    this.docid = options.docid || '_id';
     this.jsonify_results = (typeof options.jsonify_results === 'boolean') ? options.jsonify_results : true;
     // console.log('Object.keys(options.model)',Object.keys(options.model))
     if (options.model && typeof options.model === 'function') {
