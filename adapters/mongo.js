@@ -553,6 +553,7 @@ const MONGO_ADAPTER = class Mongo_Adapter {
    * @param {string[]} [options.xss_whitelist=false] Configuration for XSS whitelist package. If false XSS whitelisting will be ignored
    */
   constructor(options = {}) {
+    this.adapter_type = 'mongo';
     this.db_connection = options.db_connection || mongoose;
     this.docid = options.docid; //previously docnamelookup
     this.model = (typeof options.model === 'string') ? this.db_connection.model(options.model) : options.model;

@@ -726,7 +726,8 @@ const SQL_ADAPTER = class SQL_Adapter {
   constructor(options = {}) {
     // console.log('options.db_connection', options.db_connection);
     // console.log("INITIAL typeof options.db_connection", typeof options.db_connection,{options});
-    
+    this.adapter_type = 'sql';
+
     if (options.db_connection && typeof options.db_connection === 'object') {
       if (options.db_connection.models && options.db_connection.config) this.db_connection = options.db_connection;
       else if (Array.isArray(options.db_connection)) {
