@@ -54,12 +54,12 @@ const _QUERY = function(options, cb) {
       sort;
     if (skip) queryOptions.offset = skip;
     if (limit) queryOptions.limit = limit;
-    // if (population) {
-    //   // console.log('this.db_connection.models', this.db_connection.models);
-    //   // if (population && population.include) queryOptions.include = population.include;
-    //   // else queryOptions.include = population;
-    //   queryOptions.joins = [{ all: true, },];
-    // }
+    if (population) {
+      // console.log('this.db_connection.models', this.db_connection.models);
+      // if (population && population.include) queryOptions.include = population.include;
+      // else queryOptions.include = population;
+      queryOptions.joins = population;
+    }
     // queryOptions.raw = true;
     // const util = require('util');
     // console.log(util.inspect( queryOptions,{depth:20 }));
@@ -497,7 +497,7 @@ const _UPDATE = function(options, cb) {
         changesetData.original = (typeof originalDoc.toObject === 'function')
           ? originalDoc.toObject()
           : originalDoc;
-        
+
         Promisie.parallel({
           update: () => Model.updateAsync((options.query && typeof options.query === 'object') ? {
             limit: 1,
@@ -634,7 +634,7 @@ const _DELETE = function(options, cb) {
         [ docid ]: deleteid,
       });
     }
-    Model.deleteAsync(deleteWhere)
+    Model.deleteAsync(...deleteWhere)
       .then(result => cb(null, result))
       .catch(cb);
   } catch (e) {
@@ -748,7 +748,7 @@ const REDSHIFT_ADAPTER = class Redshift_Adapter {
     if (Array.isArray(options.search)) this.searchfields = options.search;
     else if (typeof options.search === 'string') this.searchfields = options.search.split(',');
     else this.searchfields = [];
-    this.population = options.population || [];
+    this.population = options.population || undefined;
     this.fields = options.fields;
     this.pagelength = options.pagelength || 15;
     this.cache = options.cache;
