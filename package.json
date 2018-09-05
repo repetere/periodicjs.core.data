@@ -17,6 +17,7 @@
     }
   ],
   "dependencies": {
+    "@repetere/node-redshift": "file:../node-redshift",
     "flat": "~2.0.1",
     "jsondiffpatch": "~0.2.4",
     "mysql": "^2.12.0",
