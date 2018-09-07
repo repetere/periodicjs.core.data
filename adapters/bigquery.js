@@ -508,15 +508,19 @@ const _UPDATE = function(options, cb) {
         changesetData.original = (typeof originalDoc.toObject === 'function')
           ? originalDoc.toObject()
           : originalDoc;
-
+        const q = builder.sql(Object.assign({
+          type: 'update',
+          table: `${this.db_connection.projectId}###${Model.parent.id}###${Model.id}`,
+          updates: options.updatedoc,
+        }, options.query || where));
+        const qstring = q.values.reduce((result, value, index) => {
+          return result.replace(new RegExp(`\\$${index + 1}`), (typeof value === 'string') ? `"${value}"` : value);
+        }, q.toString())
+          .replace(new RegExp(`"${this.db_connection.projectId}###${Model.parent.id}###${Model.id}"\\.`, 'g'), '')
+          .replace(/#{3}/g, '.')
+          .replace(/"/g, '`');
         Promisie.parallel({
-          update: () => Model.update((options.query && typeof options.query === 'object') ? {
-            limit: 1,
-            where: options.query,
-          } : {
-            where,
-            limit: 1,
-          }, options.updatedoc),
+          update: () => Model.query({ query: qstring, useLegacySql: false, }),
           changes: () => Promisie.promisify(generateChanges)(),
         })
           .then(result => {
@@ -602,7 +606,8 @@ const _CREATE = function(options, cb) {
         .then(result => cb(null, result))
         .catch(cb);
     } else {
-      Model.insert(utility.enforceXSSRules(newdoc, xss_whitelist, (options.newdoc) ? options : undefined))
+      const rows = [utility.enforceXSSRules(newdoc, xss_whitelist, (options.newdoc) ? options : undefined)];
+      Model.insert(rows[0])
         .then(result => cb(null, result))
         .catch(cb);
     }
@@ -645,7 +650,19 @@ const _DELETE = function(options, cb) {
         [ docid ]: deleteid,
       });
     }
-    Model.delete(...deleteWhere)
+    const q = builder.sql(Object.assign({
+      type: 'delete',
+      table: `${this.db_connection.projectId}###${Model.parent.id}###${Model.id}`,
+    }, {
+      where: deleteWhere,
+    }));
+    const qstring = q.values.reduce((result, value, index) => {
+      return result.replace(new RegExp(`\\$${index + 1}`), (typeof value === 'string') ? `"${value}"` : value);
+    }, q.toString())
+      .replace(new RegExp(`"${this.db_connection.projectId}###${Model.parent.id}###${Model.id}"\\.`, 'g'), '')
+      .replace(/#{3}/g, '.')
+      .replace(/"/g, '`');
+    Model.query({ query: qstring, useLegacySql: false, })
       .then(result => cb(null, result))
       .catch(cb);
   } catch (e) {
@@ -738,13 +755,19 @@ const BIGQUERY_ADAPTER = class BigQuery_Adapter {
     }
 
     this.docid = options.docid || '_id';
-    this.jsonify_results = (typeof options.jsonify_results === 'boolean') ? options.jsonify_results : true;
+    this.jsonify_results = (typeof options.jsonify_results === 'boolean') ? options.jsonify_results : false;
     // console.log('Object.keys(options.model)',Object.keys(options.model))
     this.db_connection.models = this.db_connection.models || {};
     if (options.model && typeof options.model === 'object') {
       if (!(options.model instanceof BigQuery.Table)) {
         this.dataset = this.db_connection.dataset(options.model.dataset);
-        this.model = this.dataset.table(options.model.tableName, options.model.tableProperties);
+        const schema = Object.keys(options.model.tableProperties).reduce((result, key) => {
+          result.push(`${key}:${options.model.tableProperties[key]}`);
+          return result;
+        }, [])
+          .join(', ');
+        this.model = this.dataset.table(options.model.tableName, { schema, });
+        this.model.schema = schema;
       } else {
         this.model = options.model;
       }
@@ -785,7 +808,13 @@ const BIGQUERY_ADAPTER = class BigQuery_Adapter {
           Promisie.map(Object.keys(this.db_connection.models), key => {
             const model = this.db_connection.models[key];
             return model.parent.get({ autoCreate: true, })
-              .then(() => model.get({ autoCreate: true, }));
+              .then(() => {
+                if (options.force) {
+                  return model.delete();
+                }
+                return Promisie.resolve();
+              })
+              .then(() => model.create({ schema: this.model.schema, }));
           }, 1)
             .then(() => {
               if (this.changeset && !this.changeset[IS_SYNCED]) {
