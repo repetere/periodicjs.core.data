@@ -1,6 +1,5 @@
 'use strict';
 const path = require('path');
-
 const ADAPTERS = require(path.join(__dirname, './adapters/index'));
 
 /**
@@ -54,3 +53,34 @@ module.exports = new DB_ADAPTER_INTERFACE({
   create: 'function',
   stream: 'function',
 });
+
+(() => {
+  const projectId = 'repetere-big-query';
+  const credentials = require('./google.config.json');
+  const schema = {
+    dataset: 'importdb',
+    tableName: 'test',
+    tableProperties: {
+      name: 'STRING',
+      createdat: 'DATETIME',
+    },
+  };
+  const Test = module.exports.create({
+    adapter: 'bigquery',
+    model: schema,
+    track_changes: false,
+    db_connection: {
+      db_options: {
+        projectId,
+        credentials,
+      }
+    }
+  });
+  Test.sync()
+    .then(() => Test.create({
+      newdoc: { name: 'test', },
+    }))
+    .then(() => Test.query({ limit: 1 }))
+    .then(console.log)
+    .catch(console.error);
+})();
