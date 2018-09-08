@@ -785,10 +785,8 @@ const BIGQUERY_ADAPTER = class BigQuery_Adapter {
     this.fields = options.fields;
     this.pagelength = options.pagelength || 15;
     this.cache = options.cache;
-    this.changeset = (options.db_connection && options.track_changes !== false)
-      ? require(path.join(__dirname, '../changeset/index')).sql(this.db_connection)
-      : false;
-    this.track_changes = (options.track_changes === false || this.changeset === false) ? false : true;
+    this.changeset = false;
+    this.track_changes = false;
     this.xss_whitelist = options.xss_whitelist || xss_default_whitelist;
     this._useCache = (options.useCache && options.cache) ? true : false;
   }
