@@ -2,6 +2,7 @@
 logs
 *.log
 package-lock.json
+google.config.json
 
 # Runtime data
 pids
