@@ -68,14 +68,21 @@ const _QUERY = function(options, cb) {
       type: 'select',
       table: `${this.db_connection.projectId}###${Model.parent.id}###${Model.id}`,
     }, queryOptions));
+    // console.log({q})
     const qstring = q.values.reduce((result, value, index) => {
       return result.replace(new RegExp(`\\$${index + 1}`), (typeof value === 'string') ? `"${value}"` : value);
     }, q.toString())
       .replace(new RegExp(`"${this.db_connection.projectId}###${Model.parent.id}###${Model.id}"\\.`, 'g'), '')
       .replace(/#{3}/g, '.')
       .replace(/"/g, '`');
+    // console.log({qstring})
     Model.query({ query: qstring, useLegacySql: false, })
-      .then(results => cb(null, (this.jsonify_results) ? getJSONResults(results) : results))
+      .then(results => {
+        // console.log({ results });
+
+        // console.log(util.inspect( results,{depth:20 }));
+        return cb(null, (this.jsonify_results) ? getJSONResults(results) : results)
+      })
       .catch(cb);
   } catch (e) {
     cb(e);
@@ -106,7 +113,6 @@ function convertSortObjToOrderArray(sort) {
       return sortObject;
     }, {});
 }
-
 /**
  * returns plain json object instead of sequelize row instance
  * 
@@ -114,9 +120,11 @@ function convertSortObjToOrderArray(sort) {
  * @returns {Object}
  */
 function getPlainResult(result) {
-  return (result && typeof result.get === 'function') ?
-    result.get({ plain: true, }) :
-    result;
+  return (result && typeof result.get === 'function')
+    ? result.get({ plain: true, })
+    : (Array.isArray(result))
+      ? result[ 0 ]
+      : result;
 }
 
 /**
@@ -126,7 +134,7 @@ function getPlainResult(result) {
  * @returns 
  */
 function getJSONResults(results) {
-  return results.rows;
+  return results[0];
 }
 /**
  * Convenience method for returning a stream of sql data. Since sequelize does not expose a cursor or stream method this is an implementation of a cursor on top of a normal SQL query
@@ -759,7 +767,7 @@ const BIGQUERY_ADAPTER = class BigQuery_Adapter {
     }
 
     this.docid = options.docid || '_id';
-    this.jsonify_results = (typeof options.jsonify_results === 'boolean') ? options.jsonify_results : false;
+    this.jsonify_results = (typeof options.jsonify_results === 'boolean') ? options.jsonify_results : true;
     // console.log('Object.keys(options.model)',Object.keys(options.model))
     this.db_connection.models = this.db_connection.models || {};
     if (options.model && typeof options.model === 'object') {
