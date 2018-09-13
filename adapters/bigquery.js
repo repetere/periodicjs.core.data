@@ -100,7 +100,11 @@ function getOrderFromSortObj(sortVal) {
  * @returns {Array} order argument
  */
 function convertSortObjToOrderArray(sort) {
-  return Object.keys(sort).map(key => [key, getOrderFromSortObj(sort[key]), ]);
+  return Object.keys(sort)
+    .reduce((sortObject, key) => {
+      sortObject[ key ] = getOrderFromSortObj(sort[ key ]);
+      return sortObject;
+    }, {});
 }
 
 /**
