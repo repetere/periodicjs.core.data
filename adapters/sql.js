@@ -584,6 +584,7 @@ const _UPDATE_ALL = function(options, cb) {
  */
 const _CREATE = function(options, cb) {
   try {
+    // console.log('options', options);
     let Model = options.model || this.model;
     let newdoc = options.newdoc || options;
     let xss_whitelist = (options.xss_whitelist) ? options.xss_whitelist : this.xss_whitelist;
@@ -591,6 +592,13 @@ const _CREATE = function(options, cb) {
       newdoc = newdoc.map(doc => utility.enforceXSSRules(doc, xss_whitelist, options));
       Model.bulkCreate(newdoc)
         .then(result => cb(null, result))
+        .catch(cb);
+    } else if (Array.isArray(newdoc)) { 
+      Promise.all(newdoc.map(singleNewDoc => Model.create(
+        utility.enforceXSSRules(singleNewDoc, xss_whitelist, (singleNewDoc) ? singleNewDoc : undefined))))
+        .then(result => {
+          cb(null, result);
+        })
         .catch(cb);
     } else {
       Model.create(utility.enforceXSSRules(newdoc, xss_whitelist, (options.newdoc) ? options : undefined))
