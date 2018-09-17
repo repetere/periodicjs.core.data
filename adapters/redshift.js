@@ -115,7 +115,8 @@ function getPlainResult(result) {
  * @returns 
  */
 function getJSONResults(results) {
-  return results.rows;
+  // console.log({results})
+  return results.rows ? results.rows : results;
 }
 /**
  * Convenience method for returning a stream of sql data. Since sequelize does not expose a cursor or stream method this is an implementation of a cursor on top of a normal SQL query
@@ -190,13 +191,13 @@ const _QUERY_WITH_PAGINATION = function(options, cb) {
     let index = 0;
     skip = (typeof skip === 'number') ? skip : 0;
     Promisie.parallel({
-      count: () => {
-        return new Promisie((resolve, reject) => {
-          Model.count(query)
-            .then(resolve)
-            .catch(reject);
-        });
-      },
+      // count: () => {
+      //   return new Promisie((resolve, reject) => {
+      //     Model.count(query)
+      //       .then(resolve)
+      //       .catch(reject);
+      //   });
+      // },
       pagination: () => {
         return Promisie.doWhilst(() => {
           return new Promisie((resolve, reject) => {
@@ -222,6 +223,7 @@ const _QUERY_WITH_PAGINATION = function(options, cb) {
       },
     })
       .then(result => {
+        result.count = result.pagination.length;
         cb(null, Object.assign({}, result.pagination, {
           collection_count: result.count,
           collection_pages: Math.ceil(result.count / ((pagelength <= limit) ? pagelength : limit)),
