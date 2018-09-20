@@ -116,7 +116,7 @@ function getPlainResult(result) {
  */
 function getJSONResults(results) {
   // console.log({results})
-  return results.rows ? results.rows : results;
+  return results && results.rows ? results.rows : results;
 }
 /**
  * Convenience method for returning a stream of sql data. Since sequelize does not expose a cursor or stream method this is an implementation of a cursor on top of a normal SQL query
@@ -359,7 +359,7 @@ const _LOAD = function(options, cb) {
         if (d === '_id') {
           if (validIdIsNumber(options.query)) {
             query.$or.push({
-              [d]: options.query,
+              [d]: Number(options.query),
             });
           }
         } else {
@@ -405,10 +405,19 @@ const _LOAD = function(options, cb) {
     // const util = require('util');
     // console.log('queryOptions',util.inspect(queryOptions, { depth:20,  }));
     // console.log('Model',util.inspect(Model, { depth:20,  }));
-    Model.query(queryOptions)
-      .then(result => cb(null, (this.jsonify_results) ?
-        getPlainResult(result) :
-        result))
+    queryOptions.limit = 1;
+    // Model.query(queryOptions)
+    //   .then(result => cb(null, (this.jsonify_results) ?
+    //     getPlainResult(result) :
+    //     result))
+    //   .catch(cb);
+    Model.queryAsync(queryOptions)
+      .then(resultsArray => {
+        const results = resultsArray && resultsArray.rows && Array.isArray(resultsArray.rows) && resultsArray.rows.length
+          ? resultsArray.rows[ 0 ]
+          : resultsArray;
+        return cb(null, (this.jsonify_results) ? getJSONResults(results) : results);
+      })
       .catch(cb);
   } catch (e) {
     cb(e);
