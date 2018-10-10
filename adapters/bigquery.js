@@ -17,7 +17,7 @@ const GENERATE_SELECT = function(fields) {
   return Object.keys(fields).reduce((result, key) => {
     if (fields[key]) {
       if (typeof fields[key] !== 'string') result.push(key);
-      else result.push([key, fields[key],]);
+      else result.push([key, fields[key], ]);
     }
     return result;
   }, []);
@@ -39,7 +39,7 @@ const _QUERY = function(options, cb) {
   try {
     let Model = options.model || this.model;
     //Iteratively checks if value was passed in options argument and conditionally assigns the default value if not passed in options
-    let { sort, limit, population, fields, skip, } = ['sort', 'limit', 'population', 'fields', 'skip',].reduce((result, key) => {
+    let { sort, limit, population, fields, skip, } = ['sort', 'limit', 'population', 'fields', 'skip', ].reduce((result, key) => {
       if (options[key] && !isNaN(Number(options[key]))) options[key] = Number(options[key]);
       result[key] = (typeof options[key]!=='undefined') ? options[key] : this[key];
       return result;
@@ -64,7 +64,7 @@ const _QUERY = function(options, cb) {
     // queryOptions.raw = true;
     // const util = require('util');
     // console.log(util.inspect( queryOptions,{depth:20 }));
-    const q = builder.sql(Object.assign({
+      const q = builder.sql(Object.assign({
       type: 'select',
       table: `${this.db_connection.projectId}###${Model.parent.id}###${Model.id}`,
     }, queryOptions));
@@ -82,7 +82,7 @@ const _QUERY = function(options, cb) {
         // console.log({ results });
 
         // console.log(util.inspect( results,{depth:20 }));
-        return cb(null, (this.jsonify_results) ? getJSONResults(results) : results);
+        return cb(null, (this.jsonify_results) ? getJSONResults(results) : results)
       })
       .catch(cb);
   } catch (e) {
@@ -197,7 +197,7 @@ const _QUERY_WITH_PAGINATION = function(options, cb) {
   try {
     let Model = options.model || this.model;
     //Iteratively checks if value was passed in options argument and conditionally assigns the default value if not passed in options
-    let { sort, limit, population, fields, skip, pagelength, query, } = ['sort', 'limit', 'population', 'fields', 'skip', 'pagelength', 'query',].reduce((result, key) => {
+    let { sort, limit, population, fields, skip, pagelength, query, } = ['sort', 'limit', 'population', 'fields', 'skip', 'pagelength', 'query', ].reduce((result, key) => {
       if (options[key] && !isNaN(Number(options[key]))) options[key] = Number(options[key]);
       result[key] = options[key] || this[key];
       return result;
@@ -359,7 +359,7 @@ const _LOAD = function(options, cb) {
     let query;
     let Model = options.model || this.model;
     //Iteratively checks if value was passed in options argument and conditionally assigns the default value if not passed in options
-    let { sort, population, fields, docid, } = ['sort', 'population', 'fields', 'docid',].reduce((result, key) => {
+    let { sort, population, fields, docid, } = ['sort', 'population', 'fields', 'docid', ].reduce((result, key) => {
       if (options[key] && !isNaN(Number(options[key]))) options[key] = Number(options[key]);
       result[key] = options[key] || this[key];
       return result;
@@ -411,7 +411,7 @@ const _LOAD = function(options, cb) {
       //   through: pop.through,
       //   foreignKey: pop.foreignKey,
       // }));
-      queryOptions.include = [{ all: true, }, ];
+      queryOptions.include = [{ all: true, },];
       // if (population && population.include) queryOptions.include = population.include;
       // else queryOptions.include = population.map(pop => ({
       //   model: this.db_connection.models[ pop.model ],
@@ -617,6 +617,16 @@ const _UPDATE_ALL = function(options, cb) {
   }
 };
 
+function stringifyObjectFields(obj) {
+  return Object.keys(obj).reduce((stringified, prop) => { 
+    const val = obj[ prop ];
+    stringified[ prop ] = (val && typeof val === 'object')
+      ? JSON.stringify(val, null, 2)
+      : val;
+    return stringified;
+  },{});
+}
+
 /**
  * Convenience method for .create sequelize method
  * @param  {Object}   options Configurable options for SQL create
@@ -633,14 +643,19 @@ const _CREATE = function(options, cb) {
     let Model = options.model || this.model;
     let newdoc = options.newdoc || options;
     let xss_whitelist = (options.xss_whitelist) ? options.xss_whitelist : this.xss_whitelist;
+    const insertOptions = {
+      ignoreUnknownValues:true,
+    }
     if (Array.isArray(newdoc) && newdoc.length && options.bulk_create) {
-      newdoc = newdoc.map(doc => utility.enforceXSSRules(doc, xss_whitelist, options));
-      Model.insert(newdoc)
+      newdoc = newdoc
+        .map(doc => utility.enforceXSSRules(doc, xss_whitelist, options))
+        .map(stringifyObjectFields);
+      Model.insert(newdoc,insertOptions)
         .then(result => cb(null, result))
         .catch(cb);
     } else {
-      const rows = [utility.enforceXSSRules(newdoc, xss_whitelist, (options.newdoc) ? options : undefined),];
-      Model.insert(rows[0])
+      const rows = [utility.enforceXSSRules(newdoc, xss_whitelist, (options.newdoc) ? options : undefined)].map(stringifyObjectFields);
+      Model.insert(rows[0],insertOptions)
         .then(result => cb(null, result))
         .catch(cb);
     }
