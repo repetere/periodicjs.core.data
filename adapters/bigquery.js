@@ -17,7 +17,7 @@ const GENERATE_SELECT = function(fields) {
   return Object.keys(fields).reduce((result, key) => {
     if (fields[key]) {
       if (typeof fields[key] !== 'string') result.push(key);
-      else result.push([key, fields[key], ]);
+      else result.push([key, fields[key],]);
     }
     return result;
   }, []);
@@ -39,7 +39,7 @@ const _QUERY = function(options, cb) {
   try {
     let Model = options.model || this.model;
     //Iteratively checks if value was passed in options argument and conditionally assigns the default value if not passed in options
-    let { sort, limit, population, fields, skip, } = ['sort', 'limit', 'population', 'fields', 'skip', ].reduce((result, key) => {
+    let { sort, limit, population, fields, skip, } = ['sort', 'limit', 'population', 'fields', 'skip',].reduce((result, key) => {
       if (options[key] && !isNaN(Number(options[key]))) options[key] = Number(options[key]);
       result[key] = (typeof options[key]!=='undefined') ? options[key] : this[key];
       return result;
@@ -70,7 +70,8 @@ const _QUERY = function(options, cb) {
     }, queryOptions));
     // console.log({q})
     const qstring = q.values.reduce((result, value, index) => {
-      return result.replace(new RegExp(`\\$${index + 1}`), (typeof value === 'string') ? `"${value}"` : value);
+      // console.log({result,value,index})
+      return result.replace(new RegExp(`\\$${index + 1}`), (typeof value === 'string') ? `'${value}'` : value);
     }, q.toString())
       .replace(new RegExp(`"${this.db_connection.projectId}###${Model.parent.id}###${Model.id}"\\.`, 'g'), '')
       .replace(/#{3}/g, '.')
@@ -81,7 +82,7 @@ const _QUERY = function(options, cb) {
         // console.log({ results });
 
         // console.log(util.inspect( results,{depth:20 }));
-        return cb(null, (this.jsonify_results) ? getJSONResults(results) : results)
+        return cb(null, (this.jsonify_results) ? getJSONResults(results) : results);
       })
       .catch(cb);
   } catch (e) {
@@ -196,7 +197,7 @@ const _QUERY_WITH_PAGINATION = function(options, cb) {
   try {
     let Model = options.model || this.model;
     //Iteratively checks if value was passed in options argument and conditionally assigns the default value if not passed in options
-    let { sort, limit, population, fields, skip, pagelength, query, } = ['sort', 'limit', 'population', 'fields', 'skip', 'pagelength', 'query', ].reduce((result, key) => {
+    let { sort, limit, population, fields, skip, pagelength, query, } = ['sort', 'limit', 'population', 'fields', 'skip', 'pagelength', 'query',].reduce((result, key) => {
       if (options[key] && !isNaN(Number(options[key]))) options[key] = Number(options[key]);
       result[key] = options[key] || this[key];
       return result;
@@ -358,7 +359,7 @@ const _LOAD = function(options, cb) {
     let query;
     let Model = options.model || this.model;
     //Iteratively checks if value was passed in options argument and conditionally assigns the default value if not passed in options
-    let { sort, population, fields, docid, } = ['sort', 'population', 'fields', 'docid', ].reduce((result, key) => {
+    let { sort, population, fields, docid, } = ['sort', 'population', 'fields', 'docid',].reduce((result, key) => {
       if (options[key] && !isNaN(Number(options[key]))) options[key] = Number(options[key]);
       result[key] = options[key] || this[key];
       return result;
@@ -395,6 +396,7 @@ const _LOAD = function(options, cb) {
 
     let queryOptions = {
       where: query,
+      limit:1,
     };
     if (fields) queryOptions.attributes = GENERATE_SELECT(fields);
     // if (sort) queryOptions.order = sort;
@@ -409,7 +411,7 @@ const _LOAD = function(options, cb) {
       //   through: pop.through,
       //   foreignKey: pop.foreignKey,
       // }));
-      queryOptions.include = [{ all: true, },];
+      queryOptions.include = [{ all: true, }, ];
       // if (population && population.include) queryOptions.include = population.include;
       // else queryOptions.include = population.map(pop => ({
       //   model: this.db_connection.models[ pop.model ],
@@ -422,10 +424,29 @@ const _LOAD = function(options, cb) {
     // const util = require('util');
     // console.log('queryOptions',util.inspect(queryOptions, { depth:20,  }));
     // console.log('Model',util.inspect(Model, { depth:20,  }));
-    Model.query(queryOptions)
-      .then(result => cb(null, (this.jsonify_results) ?
-        getPlainResult(result) :
-        result))
+    // const util = require('util');
+    // console.log(util.inspect( queryOptions,{depth:20 }));
+    const q = builder.sql(Object.assign({
+      type: 'select',
+      table: `${this.db_connection.projectId}###${Model.parent.id}###${Model.id}`,
+    }, queryOptions));
+    // console.log({q})
+    const qstring = q.values.reduce((result, value, index) => {
+      // console.log({result,value,index})
+      return result.replace(new RegExp(`\\$${index + 1}`), (typeof value === 'string') ? `'${value}'` : value);
+    }, q.toString())
+      .replace(new RegExp(`"${this.db_connection.projectId}###${Model.parent.id}###${Model.id}"\\.`, 'g'), '')
+      .replace(/#{3}/g, '.')
+      .replace(/"/g, '`');
+    // console.log({qstring})
+    // Model.query(queryOptions)
+    Model.query({ query: qstring, useLegacySql: false, })
+      .then(results => {
+        const result = Array.isArray(results) ? results[ 0 ] : results;
+        return cb(null, (this.jsonify_results)
+          ? getPlainResult(result)
+          : result);
+      })
       .catch(cb);
   } catch (e) {
     cb(e);
@@ -618,7 +639,7 @@ const _CREATE = function(options, cb) {
         .then(result => cb(null, result))
         .catch(cb);
     } else {
-      const rows = [utility.enforceXSSRules(newdoc, xss_whitelist, (options.newdoc) ? options : undefined)];
+      const rows = [utility.enforceXSSRules(newdoc, xss_whitelist, (options.newdoc) ? options : undefined),];
       Model.insert(rows[0])
         .then(result => cb(null, result))
         .catch(cb);
@@ -824,7 +845,7 @@ const BIGQUERY_ADAPTER = class BigQuery_Adapter {
                 }
                 return Promisie.resolve();
               })
-              .then(() => model.create({ schema: this.model.schema, }));
+              .then(() => model.create({ schema: model.schema, }));
           }, 1)
             .then(() => {
               if (this.changeset && !this.changeset[IS_SYNCED]) {
