@@ -18,7 +18,7 @@ const GENERATE_SELECT = function(fields) {
   return Object.keys(fields).reduce((result, key) => {
     if (fields[key]) {
       if (typeof fields[key] !== 'string') result.push(key);
-      else result.push([key, fields[key], ]);
+      else result.push([key, fields[key],]);
     }
     return result;
   }, []);
@@ -40,7 +40,7 @@ const _QUERY = function(options, cb) {
   try {
     let Model = options.model || this.model;
     //Iteratively checks if value was passed in options argument and conditionally assigns the default value if not passed in options
-    let { sort, limit, population, fields, skip, } = ['sort', 'limit', 'population', 'fields', 'skip', ].reduce((result, key) => {
+    let { sort, limit, population, fields, skip, } = ['sort', 'limit', 'population', 'fields', 'skip',].reduce((result, key) => {
       if (options[key] && !isNaN(Number(options[key]))) options[key] = Number(options[key]);
       result[key] = (typeof options[key]!=='undefined') ? options[key] : this[key];
       return result;
@@ -83,7 +83,7 @@ const _QUERY = function(options, cb) {
         // console.log({ results },'this.jsonify_results',this.jsonify_results);
 
         // console.log(util.inspect( results,{depth:20 }));
-        return cb(null, (this.jsonify_results) ? getJSONResults.call(this,results) : results)
+        return cb(null, (this.jsonify_results) ? getJSONResults.call(this, results) : results);
       })
       .catch(cb);
   } catch (e) {
@@ -124,7 +124,7 @@ function convertSortObjToOrderArray(sort) {
 function getPlainResult(result) {
   return (result && typeof result.get === 'function')
     ? result.get({ plain: true, })
-    : getJSONResults.call(this,result);
+    : getJSONResults.call(this, result);
 }
 
 /**
@@ -159,8 +159,7 @@ function getJSONResults(results) {
         return valObj;
       }, {});
       return Object.assign(doc, valueProps);
-    }
-    else return doc;
+    } else return doc;
   });
 }
 /**
@@ -223,7 +222,7 @@ const _QUERY_WITH_PAGINATION = function(options, cb) {
   try {
     let Model = options.model || this.model;
     //Iteratively checks if value was passed in options argument and conditionally assigns the default value if not passed in options
-    let { sort, limit, population, fields, skip, pagelength, query, } = ['sort', 'limit', 'population', 'fields', 'skip', 'pagelength', 'query', ].reduce((result, key) => {
+    let { sort, limit, population, fields, skip, pagelength, query, } = ['sort', 'limit', 'population', 'fields', 'skip', 'pagelength', 'query',].reduce((result, key) => {
       if (options[key] && !isNaN(Number(options[key]))) options[key] = Number(options[key]);
       result[key] = options[key] || this[key];
       return result;
@@ -251,7 +250,7 @@ const _QUERY_WITH_PAGINATION = function(options, cb) {
                 pages.total_pages++;
                 pages[index++] = {
                   documents: (this.jsonify_results) ?
-                    getJSONResults.call(this,data) : data,
+                    getJSONResults.call(this, data) : data,
                   count: data.length,
                 };
                 resolve(data.length);
@@ -383,7 +382,7 @@ const _LOAD = function(options, cb) {
     let query;
     let Model = options.model || this.model;
     //Iteratively checks if value was passed in options argument and conditionally assigns the default value if not passed in options
-    let { sort, population, fields, docid, } = ['sort', 'population', 'fields', 'docid', ].reduce((result, key) => {
+    let { sort, population, fields, docid, } = ['sort', 'population', 'fields', 'docid',].reduce((result, key) => {
       if (options[key] && !isNaN(Number(options[key]))) options[key] = Number(options[key]);
       result[key] = options[key] || this[key];
       return result;
@@ -435,7 +434,7 @@ const _LOAD = function(options, cb) {
       //   through: pop.through,
       //   foreignKey: pop.foreignKey,
       // }));
-      queryOptions.include = [{ all: true, },];
+      queryOptions.include = [{ all: true, }, ];
       // if (population && population.include) queryOptions.include = population.include;
       // else queryOptions.include = population.map(pop => ({
       //   model: this.db_connection.models[ pop.model ],
@@ -674,17 +673,17 @@ const _CREATE = function(options, cb) {
     const formatObjectFields = stringifyObjectFields.bind(this);
     const insertOptions = {
       ignoreUnknownValues:true,
-    }
+    };
     if (Array.isArray(newdoc) && newdoc.length && options.bulk_create) {
       newdoc = newdoc
         .map(doc => utility.enforceXSSRules(doc, xss_whitelist, options))
         .map(formatObjectFields);
-      Model.insert(newdoc,insertOptions)
+      Model.insert(newdoc, insertOptions)
         .then(result => cb(null, result))
         .catch(cb);
     } else {
-      const rows = [utility.enforceXSSRules(newdoc, xss_whitelist, (options.newdoc) ? options : undefined)].map(formatObjectFields);
-      Model.insert(rows[0],insertOptions)
+      const rows = [utility.enforceXSSRules(newdoc, xss_whitelist, (options.newdoc) ? options : undefined),].map(formatObjectFields);
+      Model.insert(rows[0], insertOptions)
         .then(result => cb(null, result))
         .catch(cb);
     }
