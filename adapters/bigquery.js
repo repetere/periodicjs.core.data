@@ -7,6 +7,7 @@ const utility = require(path.join(__dirname, '../utility/index'));
 const xss_default_whitelist = require(path.join(__dirname, '../defaults/index')).xss_whitelist();
 const IS_SYNCED = Symbol.for('changeset_is_synced');
 
+
 /**
  * Takes a set of fields either as a comma delimited list or a mongoose style fields object and converts them into a sequelize compatible array
  * @param {Object|string} fields Fields that should be returned when running the query
@@ -79,10 +80,10 @@ const _QUERY = function(options, cb) {
     // console.log({qstring})
     Model.query({ query: qstring, useLegacySql: false, })
       .then(results => {
-        // console.log({ results });
+        // console.log({ results },'this.jsonify_results',this.jsonify_results);
 
         // console.log(util.inspect( results,{depth:20 }));
-        return cb(null, (this.jsonify_results) ? getJSONResults(results) : results)
+        return cb(null, (this.jsonify_results) ? getJSONResults.call(this,results) : results)
       })
       .catch(cb);
   } catch (e) {
@@ -123,9 +124,7 @@ function convertSortObjToOrderArray(sort) {
 function getPlainResult(result) {
   return (result && typeof result.get === 'function')
     ? result.get({ plain: true, })
-    : (Array.isArray(result))
-      ? result[ 0 ]
-      : result;
+    : getJSONResults.call(this,result);
 }
 
 /**
@@ -135,7 +134,34 @@ function getPlainResult(result) {
  * @returns 
  */
 function getJSONResults(results) {
-  return results[0];
+  const documents = (Array.isArray(results) && results.length === 1 && Array.isArray(results[ 0 ]))
+    ? results[ 0 ]
+    : results;
+  let objectFields = [];
+  const useAltId = (this && this.docid && Array.isArray(this.docid) && this.docid.length > 1) ? this.docid.filter(id=>id!=='_id')[0] : false;
+  // console.log({useAltId})
+  // if(this)console.log('this.model.schema', this.model.schema);
+  return documents.map((doc, i) => {
+    if (i === 0) {
+      objectFields = Object.keys(doc).filter(prop => {
+        const val = doc[ prop ];
+        return val && typeof val === 'object' && val.value;
+      });
+    }
+    if (useAltId && !doc._id) doc._id = doc[ useAltId ];
+    if (objectFields.length) {
+      const valueProps = objectFields.reduce((valObj, prop) => {
+        // console.log('doc[ prop ]',doc[ prop ], 'doc[ prop ] instanceof BigQuery.date',doc[ prop ] instanceof BigQuery.date, 'doc[ prop ] instanceof BigQuery.datetime',doc[ prop ] instanceof BigQuery.datetime, 'doc[ prop ] instanceof BigQuery.time',doc[ prop ] instanceof BigQuery.time, 'doc[ prop ] instanceof BigQuery.timestamp',)
+        // valObj[ prop ] = (doc[ prop ] instanceof BigQuery.timestamp)
+        //   ? new Date(doc[ prop ].value)
+        //   : doc[ prop ].value;
+        valObj[ prop ] = doc[ prop ].value;
+        return valObj;
+      }, {});
+      return Object.assign(doc, valueProps);
+    }
+    else return doc;
+  });
 }
 /**
  * Convenience method for returning a stream of sql data. Since sequelize does not expose a cursor or stream method this is an implementation of a cursor on top of a normal SQL query
@@ -211,11 +237,7 @@ const _QUERY_WITH_PAGINATION = function(options, cb) {
     skip = (typeof skip === 'number') ? skip : 0;
     Promisie.parallel({
       count: () => {
-        return new Promisie((resolve, reject) => {
-          Model.count(query)
-            .then(resolve)
-            .catch(reject);
-        });
+        return true;
       },
       pagination: () => {
         return Promisie.doWhilst(() => {
@@ -229,7 +251,7 @@ const _QUERY_WITH_PAGINATION = function(options, cb) {
                 pages.total_pages++;
                 pages[index++] = {
                   documents: (this.jsonify_results) ?
-                    getJSONResults(data) : data,
+                    getJSONResults.call(this,data) : data,
                   count: data.length,
                 };
                 resolve(data.length);
@@ -242,6 +264,8 @@ const _QUERY_WITH_PAGINATION = function(options, cb) {
       },
     })
       .then(result => {
+        // console.log('PAGINATION result',result)
+        result.count = result.pagination.total;
         cb(null, Object.assign({}, result.pagination, {
           collection_count: result.count,
           collection_pages: Math.ceil(result.count / ((pagelength <= limit) ? pagelength : limit)),
@@ -444,8 +468,8 @@ const _LOAD = function(options, cb) {
       .then(results => {
         const result = Array.isArray(results) ? results[ 0 ] : results;
         return cb(null, (this.jsonify_results)
-          ? getPlainResult(result)
-          : result);
+          ? getPlainResult(result)[0]
+          : result[0]);
       })
       .catch(cb);
   } catch (e) {
@@ -618,13 +642,17 @@ const _UPDATE_ALL = function(options, cb) {
 };
 
 function stringifyObjectFields(obj) {
-  return Object.keys(obj).reduce((stringified, prop) => { 
+  const stringified= Object.keys(obj).reduce((stringified, prop) => { 
     const val = obj[ prop ];
     stringified[ prop ] = (val && typeof val === 'object')
       ? JSON.stringify(val, null, 2)
       : val;
     return stringified;
-  },{});
+  }, {});
+
+  if (!stringified.createdat) stringified.createdat = new Date();
+  if (!stringified.updatedat) stringified.updatedat = new Date();
+  return stringified;
 }
 
 /**
@@ -643,18 +671,19 @@ const _CREATE = function(options, cb) {
     let Model = options.model || this.model;
     let newdoc = options.newdoc || options;
     let xss_whitelist = (options.xss_whitelist) ? options.xss_whitelist : this.xss_whitelist;
+    const formatObjectFields = stringifyObjectFields.bind(this);
     const insertOptions = {
       ignoreUnknownValues:true,
     }
     if (Array.isArray(newdoc) && newdoc.length && options.bulk_create) {
       newdoc = newdoc
         .map(doc => utility.enforceXSSRules(doc, xss_whitelist, options))
-        .map(stringifyObjectFields);
+        .map(formatObjectFields);
       Model.insert(newdoc,insertOptions)
         .then(result => cb(null, result))
         .catch(cb);
     } else {
-      const rows = [utility.enforceXSSRules(newdoc, xss_whitelist, (options.newdoc) ? options : undefined)].map(stringifyObjectFields);
+      const rows = [utility.enforceXSSRules(newdoc, xss_whitelist, (options.newdoc) ? options : undefined)].map(formatObjectFields);
       Model.insert(rows[0],insertOptions)
         .then(result => cb(null, result))
         .catch(cb);
