@@ -65,7 +65,7 @@ const _QUERY = function(options, cb) {
     // queryOptions.raw = true;
     // const util = require('util');
     // console.log(util.inspect( queryOptions,{depth:20 }));
-      const q = builder.sql(Object.assign({
+    const q = builder.sql(Object.assign({
       type: 'select',
       table: `${this.db_connection.projectId}###${Model.parent.id}###${Model.id}`,
     }, queryOptions));
