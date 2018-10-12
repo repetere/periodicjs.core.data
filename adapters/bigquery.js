@@ -3,6 +3,7 @@ const path = require('path');
 const BigQuery = require('@google-cloud/bigquery');
 const Promisie = require('promisie');
 const builder = require('mongo-sql');
+const mongoose = require('mongoose');
 const utility = require(path.join(__dirname, '../utility/index'));
 const xss_default_whitelist = require(path.join(__dirname, '../defaults/index')).xss_whitelist();
 const IS_SYNCED = Symbol.for('changeset_is_synced');
@@ -648,7 +649,7 @@ function stringifyObjectFields(obj) {
       : val;
     return stringified;
   }, {});
-
+  if (!stringified._id) stringified._id = mongoose.Types.ObjectId().toString();
   if (!stringified.createdat) stringified.createdat = new Date();
   if (!stringified.updatedat) stringified.updatedat = new Date();
   return stringified;
