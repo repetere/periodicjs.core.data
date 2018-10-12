@@ -22,7 +22,7 @@ const _QUERY = function(options, cb) {
   try {
     let Model = options.model || this.model;
     //Iteratively checks if value was passed in options argument and conditionally assigns the default value if not passed in options
-    let { sort, limit, population, fields, skip, } = ['sort', 'limit', 'population', 'fields', 'skip',].reduce((result, key) => {
+    let { sort, limit, population, fields, skip, } = ['sort', 'limit', 'population', 'fields', 'skip', ].reduce((result, key) => {
       if (options[key] && !isNaN(Number(options[key]))) options[key] = Number(options[key]);
       result[key] = options[key] || this[key];
       return result;
@@ -76,7 +76,7 @@ function convertSortObjToOrderArray(sort) {
 
   return Object.keys(sort).map(key => {
     if (sort[key] < 1) { //descending
-      return [key, true,];
+      return [key, true, ];
     } else {
       return key;
     }
@@ -135,7 +135,7 @@ const _QUERY_WITH_PAGINATION = function(options, cb) {
   try {
     let Model = options.model || this.model;
     //Iteratively checks if value was passed in options argument and conditionally assigns the default value if not passed in options
-    let { sort, limit, population, fields, skip, pagelength, query, } = ['sort', 'limit', 'population', 'fields', 'skip', 'pagelength', 'query',].reduce((result, key) => {
+    let { sort, limit, population, fields, skip, pagelength, query, } = ['sort', 'limit', 'population', 'fields', 'skip', 'pagelength', 'query', ].reduce((result, key) => {
       if (options[key] && !isNaN(Number(options[key]))) options[key] = Number(options[key]);
       result[key] = options[key] || this[key];
       return result;
@@ -297,7 +297,7 @@ const _LOAD = function(options, cb) {
     let query;
 
     //Iteratively checks if value was passed in options argument and conditionally assigns the default value if not passed in options
-    let { sort, population, fields, docid, } = ['sort', 'population', 'fields', 'docid',].reduce((result, key) => {
+    let { sort, population, fields, docid, } = ['sort', 'population', 'fields', 'docid', ].reduce((result, key) => {
       if (options[key] && !isNaN(Number(options[key]))) options[key] = Number(options[key]);
       result[key] = options[key] || this[key];
       return result;
@@ -432,10 +432,10 @@ const _UPDATE = function(options, cb) {
       })(),
       changes: Promisie.promisify(generateChanges)(),
     })
-    .then(result => {
-      if (options.ensure_changes) cb(null, result);
-      else cb(null, { status: 'ok', });
-    }, cb);
+      .then(result => {
+        if (options.ensure_changes) cb(null, result);
+        else cb(null, { status: 'ok', });
+      }, cb);
   } catch (e) {
     cb(e);
   }
@@ -532,27 +532,31 @@ const _CREATE = function(options, cb) {
 const _DELETE = function(options, cb) {
   try {
     let Model = options.model || this.model;
-    let deleteid = options.deleteid || options.id;
-    if (Array.isArray(deleteid)) {
-      _QUERY.call(this, {
-        query: {
-          _id: {
-            $in: deleteid,
-          },
-        },
-      }, (err, deleteDocs) => { 
-        if (err) {
-          cb(err);
-        } else {
-          let result = Model.remove(deleteDocs);
-          cb(null, result);
-        }
-      });
+    if (options.query) {
+      Model.remove(options.query, cb);
     } else {
-      if (typeof deleteid !== 'string') throw new Error('Must specify "deleteid" or "id" for delete');
-      let object = Model.findObject({ _id: deleteid, });
-      let result = Model.remove(object);
-      cb(null, result);
+      let deleteid = options.deleteid || options.id;
+      if (Array.isArray(deleteid)) {
+        _QUERY.call(this, {
+          query: {
+            _id: {
+              $in: deleteid,
+            },
+          },
+        }, (err, deleteDocs) => { 
+          if (err) {
+            cb(err);
+          } else {
+            let result = Model.remove(deleteDocs);
+            cb(null, result);
+          }
+        });
+      } else {
+        if (typeof deleteid !== 'string') throw new Error('Must specify "deleteid" or "id" for delete');
+        let object = Model.findObject({ _id: deleteid, });
+        let result = Model.remove(object);
+        cb(null, result);
+      }
     }
   } catch (e) {
     cb(e);
@@ -569,7 +573,7 @@ const _DELETE = function(options, cb) {
  */
 const _DELETED = function(options, cb) {
   try {
-    _LOAD.call(this, { model: options.model, query: options.deleteid || options.id, }, (err1, loaded) => {
+    _LOAD.call(this, { model: options.model, query: options.query || options.deleteid || options.id, }, (err1, loaded) => {
       if (err1) cb(err1);
       else {
         _DELETE.call(this, options, (err2) => {
@@ -623,7 +627,7 @@ const LOKI_ADAPTER = class Loki_Adapter {
     this.xss_whitelist = options.xss_whitelist || xss_default_whitelist;
     this._useCache = (options.useCache && options.cache) ? true : false;
   }
-    /**
+  /**
      * Query method for adapter see _QUERY and _QUERY_WITH_PAGINATION for more details
      * @param  {Object}  [options={}] Configurable options for query
      * @param {Boolean} options.paginate When true query will return data in a paginated form
@@ -635,7 +639,7 @@ const LOKI_ADAPTER = class Loki_Adapter {
     if (typeof cb === 'function') _query(options, cb);
     else return Promisie.promisify(_query)(options);
   }
-    /**
+  /**
      * Search method for adapter see _SEARCH for more details
      * @param  {Object}  [options={}] Configurable options for query
      * @param  {Function} [cb=false]     Callback argument. When cb is not passed function returns a Promise
@@ -646,7 +650,7 @@ const LOKI_ADAPTER = class Loki_Adapter {
     if (typeof cb === 'function') _search(options, cb);
     else return Promisie.promisify(_search)(options);
   }
-    /**
+  /**
      * Stream method for adapter see _STREAM for more details
      * @param  {Object}  [options={}] Configurable options for stream
      * @param  {Function} [cb=false]     Callback argument. When cb is not passed function returns a Promise
@@ -657,7 +661,7 @@ const LOKI_ADAPTER = class Loki_Adapter {
     if (typeof cb === 'function') _stream(options, cb);
     else return Promisie.promisify(_stream)(options);
   }
-    /**
+  /**
      * Load method for adapter see _LOAD for more details
      * @param  {Object}  [options={}] Configurable options for load
      * @param  {Function} [cb=false]     Callback argument. When cb is not passed function returns a Promise
@@ -668,7 +672,7 @@ const LOKI_ADAPTER = class Loki_Adapter {
     if (typeof cb === 'function') _load(options, cb);
     else return Promisie.promisify(_load)(options);
   }
-    /**
+  /**
      * Update method for adapter see _UPDATE, _UPDATED and _UPDATE_ALL for more details
      * @param  {Object}  [options={}] Configurable options for update
      * @param {Boolean} options.return_updated If true update method will return the updated document instead of an update status message
@@ -681,7 +685,7 @@ const LOKI_ADAPTER = class Loki_Adapter {
     if (typeof cb === 'function') _update(options, cb);
     else return Promisie.promisify(_update)(options);
   }
-    /**
+  /**
      * Create method for adapter see _CREATE for more details
      * @param  {Object}  [options={}] Configurable options for create
      * @param  {Function} [cb=false]     Callback argument. When cb is not passed function returns a Promise
@@ -692,7 +696,7 @@ const LOKI_ADAPTER = class Loki_Adapter {
     if (typeof cb === 'function') _create(options, cb);
     else return Promisie.promisify(_create)(options);
   }
-    /**
+  /**
      * Delete method for adapter see _DELETE and _DELETED for more details
      * @param  {Object}  [options={}] Configurable options for create
      * @param {Boolean} options.return_deleted If true delete method will return the deleted document

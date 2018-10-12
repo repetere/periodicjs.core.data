@@ -500,9 +500,13 @@ const _CREATE = function(options, cb) {
 const _DELETE = function(options, cb) {
   try {
     let Model = options.model || this.model;
-    let deleteid = options.deleteid || options.id;
-    if (typeof deleteid !== 'string') throw new Error('Must specify "deleteid" or "id" for delete');
-    Model.remove({ _id: deleteid, }, cb);
+    if (options.query) {
+      Model.remove(options.query, cb);
+    } else {
+      let deleteid = options.deleteid || options.id;
+      if (typeof deleteid !== 'string') throw new Error('Must specify "deleteid" or "id" for delete');
+      Model.remove({ _id: deleteid, }, cb);
+    }
   } catch (e) {
     cb(e);
   }
@@ -518,7 +522,7 @@ const _DELETE = function(options, cb) {
  */
 const _DELETED = function(options, cb) {
   try {
-    _LOAD.call(this, { model: options.model, query: options.deleteid || options.id, }, (err1, loaded) => {
+    _LOAD.call(this, { model: options.model, query: options.query || options.deleteid || options.id, }, (err1, loaded) => {
       if (err1) cb(err1);
       else {
         _DELETE.call(this, options, (err2) => {

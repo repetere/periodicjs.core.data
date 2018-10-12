@@ -622,35 +622,46 @@ const _CREATE = function(options, cb) {
 const _DELETE = function(options, cb) {
   try {
     let Model = options.model || this.model;
-    let deleteid = options.deleteid || options.id;
-    if (typeof deleteid !== 'string' && typeof deleteid !== 'number') throw new Error('Must specify "deleteid" or "id" for delete');
-    const docid = options.docid || this.docid || '_id';
-    const deleteWhere = [];
-    if (Array.isArray(docid)) {
-      deleteWhere.push(...docid
-        .map(docidname => ({
-          [ docidname ]: deleteid,
-        }))
-      );
-    } else if (docid.indexOf(',')!==-1) {
-      deleteWhere.push(...docid
-        .split(',')
-        .map(docidname => ({
-          [ docidname ]: deleteid,
-        }))
-      );
-    } else {
-      deleteWhere.push({
-        [ docid ]: deleteid,
-      });
-    }
-    Model.destroy({
-      where: deleteWhere,
-      force: options.force,
-      limit: 1,
-    })
+    if (options.query) {
+      Model.destroy({
+        where: options.query,
+        force: options.force,
+        // limit: 1,
+      })
       .then(result => cb(null, result))
-      .catch(cb);
+      .catch(cb);   
+    } else {
+      let deleteid = options.deleteid || options.id;
+      if (typeof deleteid !== 'string' && typeof deleteid !== 'number') throw new Error('Must specify "deleteid" or "id" for delete');
+      const docid = options.docid || this.docid || '_id';
+      const deleteWhere = [];
+      if (Array.isArray(docid)) {
+        deleteWhere.push(...docid
+          .map(docidname => ({
+            [ docidname ]: deleteid,
+          }))
+        );
+      } else if (docid.indexOf(',')!==-1) {
+        deleteWhere.push(...docid
+          .split(',')
+          .map(docidname => ({
+            [ docidname ]: deleteid,
+          }))
+        );
+      } else {
+        deleteWhere.push({
+          [ docid ]: deleteid,
+        });
+      }
+      Model.destroy({
+        where: deleteWhere,
+        force: options.force,
+        limit: 1,
+      })
+        .then(result => cb(null, result))
+        .catch(cb);      
+    }
+
   } catch (e) {
     cb(e);
   }
@@ -666,7 +677,7 @@ const _DELETE = function(options, cb) {
  */
 const _DELETED = function(options, cb) {
   try {
-    _LOAD.call(this, { model: options.model, query: options.deleteid || options.id, }, (err1, loaded) => {
+    _LOAD.call(this, { model: options.model, query: options.query || options.deleteid || options.id, }, (err1, loaded) => {
       if (err1) cb(err1);
       else {
         _DELETE.call(this, options, (err2) => {

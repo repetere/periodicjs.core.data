@@ -19,7 +19,7 @@ const GENERATE_SELECT = function(fields) {
   return Object.keys(fields).reduce((result, key) => {
     if (fields[key]) {
       if (typeof fields[key] !== 'string') result.push(key);
-      else result.push([key, fields[key],]);
+      else result.push([key, fields[key], ]);
     }
     return result;
   }, []);
@@ -41,7 +41,7 @@ const _QUERY = function(options, cb) {
   try {
     let Model = options.model || this.model;
     //Iteratively checks if value was passed in options argument and conditionally assigns the default value if not passed in options
-    let { sort, limit, population, fields, skip, } = ['sort', 'limit', 'population', 'fields', 'skip',].reduce((result, key) => {
+    let { sort, limit, population, fields, skip, } = ['sort', 'limit', 'population', 'fields', 'skip', ].reduce((result, key) => {
       if (options[key] && !isNaN(Number(options[key]))) options[key] = Number(options[key]);
       result[key] = (typeof options[key]!=='undefined') ? options[key] : this[key];
       return result;
@@ -223,7 +223,7 @@ const _QUERY_WITH_PAGINATION = function(options, cb) {
   try {
     let Model = options.model || this.model;
     //Iteratively checks if value was passed in options argument and conditionally assigns the default value if not passed in options
-    let { sort, limit, population, fields, skip, pagelength, query, } = ['sort', 'limit', 'population', 'fields', 'skip', 'pagelength', 'query',].reduce((result, key) => {
+    let { sort, limit, population, fields, skip, pagelength, query, } = ['sort', 'limit', 'population', 'fields', 'skip', 'pagelength', 'query', ].reduce((result, key) => {
       if (options[key] && !isNaN(Number(options[key]))) options[key] = Number(options[key]);
       result[key] = options[key] || this[key];
       return result;
@@ -383,7 +383,7 @@ const _LOAD = function(options, cb) {
     let query;
     let Model = options.model || this.model;
     //Iteratively checks if value was passed in options argument and conditionally assigns the default value if not passed in options
-    let { sort, population, fields, docid, } = ['sort', 'population', 'fields', 'docid',].reduce((result, key) => {
+    let { sort, population, fields, docid, } = ['sort', 'population', 'fields', 'docid', ].reduce((result, key) => {
       if (options[key] && !isNaN(Number(options[key]))) options[key] = Number(options[key]);
       result[key] = options[key] || this[key];
       return result;
@@ -435,7 +435,7 @@ const _LOAD = function(options, cb) {
       //   through: pop.through,
       //   foreignKey: pop.foreignKey,
       // }));
-      queryOptions.include = [{ all: true, }, ];
+      queryOptions.include = [{ all: true, },];
       // if (population && population.include) queryOptions.include = population.include;
       // else queryOptions.include = population.map(pop => ({
       //   model: this.db_connection.models[ pop.model ],
@@ -492,6 +492,8 @@ const _LOAD = function(options, cb) {
  */
 const _UPDATE = function(options, cb) {
   try {
+    // console.log('options', options);
+    // console.log('this.docid', this.docid);
     options.track_changes = (typeof options.track_changes === 'boolean') ? options.track_changes : this.track_changes;
     if (!options.id) {
       options.id = options.updatedoc._id || options.updatedoc.id;
@@ -571,7 +573,7 @@ const _UPDATE = function(options, cb) {
           updates: options.updatedoc,
         }, options.query || where));
         const qstring = q.values.reduce((result, value, index) => {
-          return result.replace(new RegExp(`\\$${index + 1}`), (typeof value === 'string') ? `"${value}"` : value);
+          return result.replace(new RegExp(`\\$${index + 1}`), (typeof value === 'string') ? `'${value}'` : value);
         }, q.toString())
           .replace(new RegExp(`"${this.db_connection.projectId}###${Model.parent.id}###${Model.id}"\\.`, 'g'), '')
           .replace(/#{3}/g, '.')
@@ -650,6 +652,7 @@ function stringifyObjectFields(obj) {
     return stringified;
   }, {});
   if (!stringified._id) stringified._id = mongoose.Types.ObjectId().toString();
+  if (!stringified.entitytype && this && this.model) stringified.entitytype = this.model.id;
   if (!stringified.createdat) stringified.createdat = new Date();
   if (!stringified.updatedat) stringified.updatedat = new Date();
   return stringified;
@@ -683,7 +686,7 @@ const _CREATE = function(options, cb) {
         .then(result => cb(null, result))
         .catch(cb);
     } else {
-      const rows = [utility.enforceXSSRules(newdoc, xss_whitelist, (options.newdoc) ? options : undefined),].map(formatObjectFields);
+      const rows = [utility.enforceXSSRules(newdoc, xss_whitelist, (options.newdoc) ? options : undefined), ].map(formatObjectFields);
       Model.insert(rows[0], insertOptions)
         .then(result => cb(null, result))
         .catch(cb);
@@ -705,27 +708,31 @@ const _CREATE = function(options, cb) {
 const _DELETE = function(options, cb) {
   try {
     let Model = options.model || this.model;
-    let deleteid = options.deleteid || options.id;
-    if (typeof deleteid !== 'string' && typeof deleteid !== 'number') throw new Error('Must specify "deleteid" or "id" for delete');
-    const docid = options.docid || this.docid || '_id';
-    const deleteWhere = [];
-    if (Array.isArray(docid)) {
-      deleteWhere.push(...docid
-        .map(docidname => ({
-          [ docidname ]: deleteid,
-        }))
-      );
-    } else if (docid.indexOf(',')!==-1) {
-      deleteWhere.push(...docid
-        .split(',')
-        .map(docidname => ({
-          [ docidname ]: deleteid,
-        }))
-      );
+    let deleteWhere = [];
+    if (options.query) {
+      deleteWhere = options.query;
     } else {
-      deleteWhere.push({
-        [ docid ]: deleteid,
-      });
+      let deleteid = options.deleteid || options.id;
+      if (typeof deleteid !== 'string' && typeof deleteid !== 'number') throw new Error('Must specify "deleteid" or "id" for delete');
+      const docid = options.docid || this.docid || '_id';
+      if (Array.isArray(docid)) {
+        deleteWhere.push(...docid
+          .map(docidname => ({
+            [ docidname ]: deleteid,
+          }))
+        );
+      } else if (docid.indexOf(',')!==-1) {
+        deleteWhere.push(...docid
+          .split(',')
+          .map(docidname => ({
+            [ docidname ]: deleteid,
+          }))
+        );
+      } else {
+        deleteWhere.push({
+          [ docid ]: deleteid,
+        });
+      }
     }
     const q = builder.sql(Object.assign({
       type: 'delete',
@@ -733,12 +740,15 @@ const _DELETE = function(options, cb) {
     }, {
       where: deleteWhere,
     }));
-    const qstring = q.values.reduce((result, value, index) => {
-      return result.replace(new RegExp(`\\$${index + 1}`), (typeof value === 'string') ? `"${value}"` : value);
+    let qstring = q.values.reduce((result, value, index) => {
+      return result.replace(new RegExp(`\\$${index + 1}`), (typeof value === 'string') ? `'${value}'` : value);
     }, q.toString())
       .replace(new RegExp(`"${this.db_connection.projectId}###${Model.parent.id}###${Model.id}"\\.`, 'g'), '')
       .replace(/#{3}/g, '.')
       .replace(/"/g, '`');
+    qstring = `#standardSQL
+    ${qstring};`;
+    // console.log('qstring', qstring)
     Model.query({ query: qstring, useLegacySql: false, })
       .then(result => cb(null, result))
       .catch(cb);
@@ -757,7 +767,7 @@ const _DELETE = function(options, cb) {
  */
 const _DELETED = function(options, cb) {
   try {
-    _LOAD.call(this, { model: options.model, query: options.deleteid || options.id, }, (err1, loaded) => {
+    _LOAD.call(this, { model: options.model, query: options.query || options.deleteid || options.id, }, (err1, loaded) => {
       if (err1) cb(err1);
       else {
         _DELETE.call(this, options, (err2) => {
