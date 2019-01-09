@@ -746,6 +746,7 @@ const SQL_ADAPTER = class SQL_Adapter {
     // console.log('options.db_connection', options.db_connection);
     // console.log("INITIAL typeof options.db_connection", typeof options.db_connection,{options});
     this.adapter_type = 'sql';
+    this.use_changes = typeof options.use_changes ==='boolean'? options.use_changes :true;
 
     if (options.db_connection && typeof options.db_connection === 'object') {
       if (options.db_connection.models && options.db_connection.config) this.db_connection = options.db_connection;
@@ -783,7 +784,7 @@ const SQL_ADAPTER = class SQL_Adapter {
     this.fields = options.fields;
     this.pagelength = options.pagelength || 15;
     this.cache = options.cache;
-    this.changeset = (options.db_connection && options.track_changes !== false)
+    this.changeset = (this.use_changes && options.db_connection && options.track_changes !== false)
       ? require(path.join(__dirname, '../changeset/index')).sql(this.db_connection)
       : false;
     this.track_changes = (options.track_changes === false || this.changeset === false) ? false : true;

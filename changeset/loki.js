@@ -11,24 +11,24 @@ const CHANGESET = lowkie.Schema({
   createdat: {
     index: true,
     type: Date,
-    default: Date.now
+    default: Date.now,
   },
   editor: {
     type: lowkie.Schema.ObjectId,
-    ref: 'User'
+    ref: 'User',
   },
   editor_username: String,
   changeset: lowkie.Schema.Types.Mixed,
   parent_document: {
     id: {
       index: true,
-      type: lowkie.Schema.ObjectId
+      type: lowkie.Schema.ObjectId,
     },
     document_type: {
       index: true,
-      type: String
-    }
-  }
+      type: String,
+    },
+  },
 });
 
 /**
@@ -40,12 +40,13 @@ module.exports = function register_changeset (db_connection) {
   let ChangeSet;
   try {
     ChangeSet = db_connection.model('Changeset', CHANGESET);
-  }
-  catch (e) {
+  } catch (e) {
     ChangeSet = db_connection.model('Changeset');
   }
   return new Loki_Adapter({
     model: ChangeSet,
-    track_changes: false
+    track_changes: false,
+    use_changes: false,
+    db_connection,
   });
 };

@@ -5,9 +5,9 @@ const sql = require('./sql');
 const loki = require('./loki');
 
 module.exports = { 
-	mongo_default: DEFAULTS.mongo,
-	mongo,
-	sql,
+  mongo_default: DEFAULTS.mongo,
+  mongo,
+  sql,
   loki,
-  loki_default: DEFAULTS.loki
+  loki_default: DEFAULTS.loki,
 };

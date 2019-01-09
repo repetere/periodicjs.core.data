@@ -556,8 +556,9 @@ const MONGO_ADAPTER = class Mongo_Adapter {
    * @param {Boolean} [options.track_changes=true] Sets default track changes behavior for udpates
    * @param {string[]} [options.xss_whitelist=false] Configuration for XSS whitelist package. If false XSS whitelisting will be ignored
    */
-  constructor(options = {}) {
+  constructor(options = { }) {
     this.adapter_type = 'mongo';
+    this.use_changes = typeof options.use_changes ==='boolean'? options.use_changes :true;
     this.db_connection = options.db_connection || mongoose;
     this.docid = options.docid; //previously docnamelookup
     this.model = (typeof options.model === 'string') ? this.db_connection.model(options.model) : options.model;
@@ -578,7 +579,12 @@ const MONGO_ADAPTER = class Mongo_Adapter {
     this.pagelength = options.pagelength || 15;
     this.cache = options.cache;
     this.track_changes = (options.track_changes === false) ? false : true;
-    this.changeset = (options.db_connection) ? require(path.join(__dirname, '../changeset/index')).mongo(this.db_connection) : require(path.join(__dirname, '../changeset/index')).mongo_default;
+    if (this.use_changes && this.track_changes) {
+      this.changeset = (options.db_connection)
+        ? require(path.join(__dirname, '../changeset/index')).mongo(this.db_connection)
+        // ? require(path.join(__dirname, '../changeset/index')).mongo_default
+        : require(path.join(__dirname, '../changeset/index')).mongo_default;
+    } 
     this.xss_whitelist = options.xss_whitelist || xss_default_whitelist;
     this._useCache = (options.useCache && options.cache) ? true : false;
   }
