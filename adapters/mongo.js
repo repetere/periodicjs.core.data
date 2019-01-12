@@ -501,11 +501,11 @@ const _DELETE = function(options, cb) {
   try {
     let Model = options.model || this.model;
     if (options.query) {
-      Model.remove(options.query, cb);
+      Model.deleteOne(options.query, cb);
     } else {
       let deleteid = options.deleteid || options.id;
       if (typeof deleteid !== 'string') throw new Error('Must specify "deleteid" or "id" for delete');
-      Model.remove({ _id: deleteid, }, cb);
+      Model.deleteOne({ _id: deleteid, }, cb);
     }
   } catch (e) {
     cb(e);
