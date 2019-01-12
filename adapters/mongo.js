@@ -104,7 +104,7 @@ const _QUERY_WITH_PAGINATION = function(options, cb) {
     Promisie.parallel({
       count: () => {
         return new Promisie((resolve, reject) => {
-          Model.count(query, (err, count) => {
+          Model.estimatedDocumentCount(query, (err, count) => {
             if (err) reject(err);
             else resolve(count);
           });
@@ -399,7 +399,7 @@ const _UPDATE = function(options, cb) {
           ? originalDoc.toObject()
           : originalDoc;
         Promisie.parallel({
-          update: Promisie.promisify(Model.update, Model)({ _id: options.id, }, updateOperation),
+          update: Promisie.promisify(Model.updateOne, Model)({ _id: options.id, }, updateOperation),
           changes: Promisie.promisify(generateChanges)(),
         })
           .then(result => {
@@ -455,7 +455,7 @@ const _UPDATE_ALL = function(options, cb) {
     if (options.updateattributes && typeof options.updateattributes === 'object') patch = options.updateattributes;
     else if (options.updatedoc && typeof options.updatedoc === 'object') patch = GENERATE_PATCH(options.updatedoc);
     else throw new Error('Either updateattributes or updatedoc option must be set in order to execute multi update');
-    Model.update(query, patch, { multi: true, }, cb);
+    Model.updateMany(query, patch, { multi: true, }, cb);
   } catch (e) {
     cb(e);
   }
