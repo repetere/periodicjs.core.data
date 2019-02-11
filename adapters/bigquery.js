@@ -140,7 +140,7 @@ function getJSONResults(results) {
     : results;
   let objectFields = [];
   const useAltId = (this && this.docid && Array.isArray(this.docid) && this.docid.length > 1) ? this.docid.filter(id=>id!=='_id')[0] : false;
-  // console.log({useAltId})
+  // console.log({documents,useAltId})
   // if(this)console.log('this.model.schema', this.model.schema);
   return documents.map((doc, i) => {
     if (i === 0) {
@@ -156,7 +156,10 @@ function getJSONResults(results) {
         // valObj[ prop ] = (doc[ prop ] instanceof BigQuery.timestamp)
         //   ? new Date(doc[ prop ].value)
         //   : doc[ prop ].value;
-        valObj[ prop ] = doc[ prop ].value;
+        // console.log({ doc, prop },'doc[ prop ]',doc[ prop ]);
+        valObj[ prop ] = (doc[ prop ] !== null && doc[ prop ] && typeof doc[ prop ].value !== 'undefined')
+          ? doc[ prop ].value
+          : doc[ prop ];
         return valObj;
       }, {});
       return Object.assign(doc, valueProps);
