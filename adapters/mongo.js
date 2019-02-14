@@ -247,6 +247,8 @@ const _LOAD = function(options, cb) {
   try {
     let Model = options.model || this.model;
     let query;
+    // console.log('options.query', options.query);
+    // if(!options.query) console.log({options})
     //Iteratively checks if value was passed in options argument and conditionally assigns the default value if not passed in options
     let { sort, population, fields, docid, } = ['sort', 'population', 'fields', 'docid', ].reduce((result, key) => {
       if (options[key] && !isNaN(Number(options[key]))) options[key] = Number(options[key]);
@@ -270,13 +272,16 @@ const _LOAD = function(options, cb) {
           });
         }
       });
+    } else if (!options.query && options.docid) { 
+      query = { _id: options.docid.toString(), };
     } else {
       query = {
         [(utility.isObjectId(options.query)) ? '_id' : (docid || '_id')]: options.query,
       };
     }
     // const util = require('util');
-    // console.log(util.inspect(query,{depth:20}));
+    // console.log('query',util.inspect(query, { depth: 20 }));
+    // console.log('typeof query', typeof query,{query});
     Model.findOne(query, fields)
       .sort(sort)
       .populate(population || '')
