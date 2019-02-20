@@ -4,6 +4,8 @@ const BigQuery = require('@google-cloud/bigquery');
 const Promisie = require('promisie');
 const builder = require('mongo-sql');
 const mongoose = require('mongoose');
+const flatten = require('flat');
+const unflatten = flatten.unflatten;
 const utility = require(path.join(__dirname, '../utility/index'));
 const xss_default_whitelist = require(path.join(__dirname, '../defaults/index')).xss_whitelist();
 const IS_SYNCED = Symbol.for('changeset_is_synced');
@@ -19,7 +21,7 @@ const GENERATE_SELECT = function(fields) {
   return Object.keys(fields).reduce((result, key) => {
     if (fields[key]) {
       if (typeof fields[key] !== 'string') result.push(key);
-      else result.push([key, fields[key], ]);
+      else result.push([key, fields[key],]);
     }
     return result;
   }, []);
@@ -41,7 +43,7 @@ const _QUERY = function(options, cb) {
   try {
     let Model = options.model || this.model;
     //Iteratively checks if value was passed in options argument and conditionally assigns the default value if not passed in options
-    let { sort, limit, population, fields, skip, } = ['sort', 'limit', 'population', 'fields', 'skip', ].reduce((result, key) => {
+    let { sort, limit, population, fields, skip, } = ['sort', 'limit', 'population', 'fields', 'skip',].reduce((result, key) => {
       if (options[key] && !isNaN(Number(options[key]))) options[key] = Number(options[key]);
       result[key] = (typeof options[key]!=='undefined') ? options[key] : this[key];
       return result;
@@ -226,7 +228,7 @@ const _QUERY_WITH_PAGINATION = function(options, cb) {
   try {
     let Model = options.model || this.model;
     //Iteratively checks if value was passed in options argument and conditionally assigns the default value if not passed in options
-    let { sort, limit, population, fields, skip, pagelength, query, } = ['sort', 'limit', 'population', 'fields', 'skip', 'pagelength', 'query', ].reduce((result, key) => {
+    let { sort, limit, population, fields, skip, pagelength, query, } = ['sort', 'limit', 'population', 'fields', 'skip', 'pagelength', 'query',].reduce((result, key) => {
       if (options[key] && !isNaN(Number(options[key]))) options[key] = Number(options[key]);
       result[key] = options[key] || this[key];
       return result;
@@ -370,6 +372,47 @@ function validIdIsNumber(ID) {
     'number' && parseInt(ID, 10) == ID);
 }
 
+// options.updatedoc.description = "";
+// options.updatedoc.body_html = "";
+function valueReplacer(value) {
+
+  const valueType = typeof value;
+  switch (valueType) {
+  case 'string':
+    if(this.strict) value=value.replace(/\'/gi, '\\\'').replace(/\r?\n|\r/g, ' ');
+    return `'${value}'`;
+  case 'number':
+    return value;
+  case 'boolean':
+    return value;
+  default:
+    if (value instanceof Date) return value;
+    else if (!value) return value;
+    else if (Array.isArray(value)) return `'${JSON.stringify( value.map(v => valueReplacer.call(this, v)))}'`;
+    var flattenedJSON = flatten(value);
+    var cleanedFlatten = Object.keys(flattenedJSON).reduce((result, flattenedProp) => {
+      var testVal = flattenedJSON[ flattenedProp ];
+      result[ flattenedProp ] = typeof testVal === 'string' ? testVal.replace(/\'/gi, '&apos;'): testVal;
+      return result;
+    }, {});
+    var unflattedCleaned = unflatten(cleanedFlatten);
+    // console.log('unflattedCleaned', unflattedCleaned)
+    return `'${JSON.stringify(unflattedCleaned)}'`;
+      // const unflatten 
+      // let jsonstringify = (this.strict)
+      //   ? `'${JSON.stringify(value).replace('\'','&apos;')}'`
+      //   : `'${JSON.stringify(value)}'`;
+      // return jsonstringify;
+  }
+}
+
+function stringifyArray(updatedoc) {
+  return Object.keys(updatedoc).reduce((result, prop) => { 
+    const value = updatedoc[ prop ];
+    result[ prop ] = Array.isArray(value) ? JSON.stringify(value) : value;
+    return result;
+  }, {});
+}
 /**
  * Convenience method for .findOne sequelize methods
  * @param  {Object}   options Configurable options for mongo query
@@ -386,7 +429,7 @@ const _LOAD = function(options, cb) {
     let query;
     let Model = options.model || this.model;
     //Iteratively checks if value was passed in options argument and conditionally assigns the default value if not passed in options
-    let { sort, population, fields, docid, } = ['sort', 'population', 'fields', 'docid', ].reduce((result, key) => {
+    let { sort, population, fields, docid, } = ['sort', 'population', 'fields', 'docid',].reduce((result, key) => {
       if (options[key] && !isNaN(Number(options[key]))) options[key] = Number(options[key]);
       result[key] = options[key] || this[key];
       return result;
@@ -438,7 +481,7 @@ const _LOAD = function(options, cb) {
       //   through: pop.through,
       //   foreignKey: pop.foreignKey,
       // }));
-      queryOptions.include = [{ all: true, },];
+      queryOptions.include = [{ all: true, }, ];
       // if (population && population.include) queryOptions.include = population.include;
       // else queryOptions.include = population.map(pop => ({
       //   model: this.db_connection.models[ pop.model ],
@@ -496,8 +539,9 @@ const _LOAD = function(options, cb) {
 const _UPDATE = function(options, cb) {
   try {
     // console.log('options', options);
-    // console.log('this.docid', this.docid);
+    const safeValues = valueReplacer.bind(options);
     options.track_changes = (typeof options.track_changes === 'boolean') ? options.track_changes : this.track_changes;
+    if (options.stringifyArray) options.updatedoc = stringifyArray(options.updatedoc);
     if (!options.id) {
       options.id = options.updatedoc._id || options.updatedoc.id;
     }
@@ -533,8 +577,15 @@ const _UPDATE = function(options, cb) {
       }
     };
     let xss_whitelist = (options.xss_whitelist) ? options.xss_whitelist : this.xss_whitelist;
+    // console.log({ xss_whitelist });
     options.updatedoc.updatedat = new Date();
     options.updatedoc = utility.enforceXSSRules(options.updatedoc, xss_whitelist, options);
+    if (options.strict) {
+      options.updatedoc = this.modelFields.reduce((result, prop) => { 
+        result[ prop ] = options.updatedoc[ prop ];
+        return result;
+      }, {});
+    }
     let Model = options.model || this.model;
     let docid = (Array.isArray(options.docid) || typeof options.docid === 'string')
       ? options.docid
@@ -555,7 +606,7 @@ const _UPDATE = function(options, cb) {
     } else {
       where.$or.push({ [ docid ]: options.id, });
     }
-    // console.log({docid},'this.docid',this.docid,'where',JSON.stringify(where, null, 2));
+    // console.log({ docid }, 'this.docid', this.docid, 'where', JSON.stringify(where, null, 2));
     Promise.resolve(options.originalrevision)
       .then(originalDoc => {
         if (originalDoc) {
@@ -575,24 +626,41 @@ const _UPDATE = function(options, cb) {
           table: `${this.db_connection.projectId}###${Model.parent.id}###${Model.id}`,
           updates: options.updatedoc,
         }, options.query || where));
+        // console.log('q', q);
         const qstring = q.values.reduce((result, value, index) => {
-          return result.replace(new RegExp(`\\$${index + 1}`), (typeof value === 'string') ? `'${value}'` : value);
+          const safeValue = safeValues(value);
+          // console.log({value,safeValue})
+          return result.replace(new RegExp(`\\$${index + 1}`), safeValue);
         }, q.toString())
           .replace(new RegExp(`"${this.db_connection.projectId}###${Model.parent.id}###${Model.id}"\\.`, 'g'), '')
           .replace(/#{3}/g, '.')
           .replace(/"/g, '`');
-        Promisie.parallel({
-          update: () => Model.query({ query: qstring, useLegacySql: false, }),
-          changes: () => Promisie.promisify(generateChanges)(),
-        })
+          // console.log('qstring');
+          // console.log(qstring);
+        this.model.get()
+          .then(([table, apiResponse,]) => {
+            // console.log({ table, apiResponse });
+            if (apiResponse && apiResponse.streamingBuffer && parseInt(apiResponse.streamingBuffer.estimatedRows) > 0) throw new Error('Cannot update rows on ' + apiResponse.id + ' while table is still streaming data: ' + apiResponse.selfLink + '. last update:' + new Date(parseInt(apiResponse.streamingBuffer.oldestEntryTime)));
+            return Promisie.parallel({
+              update: () => Model.query({ query: qstring, useLegacySql: false, }),
+              changes: () => Promisie.promisify(generateChanges)(),
+            });
+          })
           .then(result => {
             if (options.ensure_changes) cb(null, result);
             else cb(null, result.update);
-          }, cb);
+          }, (err, bq) => {
+            console.error(err);
+            cb(err, bq);
+          });
         
       })
-      .catch(cb);
+      .catch((e) => { 
+        console.error( e);
+        cb(e);
+      });
   } catch (e) {
+    console.error(e);
     cb(e);
   }
 };
@@ -689,7 +757,7 @@ const _CREATE = function(options, cb) {
         .then(result => cb(null, result))
         .catch(cb);
     } else {
-      const rows = [utility.enforceXSSRules(newdoc, xss_whitelist, (options.newdoc) ? options : undefined), ].map(formatObjectFields);
+      const rows = [utility.enforceXSSRules(newdoc, xss_whitelist, (options.newdoc) ? options : undefined),].map(formatObjectFields);
       Model.insert(rows[0], insertOptions)
         .then(result => cb(null, result))
         .catch(cb);
@@ -752,7 +820,12 @@ const _DELETE = function(options, cb) {
     qstring = `#standardSQL
     ${qstring};`;
     // console.log('qstring', qstring)
-    Model.query({ query: qstring, useLegacySql: false, })
+    this.model.get()
+      .then(([table, apiResponse,]) => {
+        // console.log({ table, apiResponse });
+        if (apiResponse && apiResponse.streamingBuffer && parseInt(apiResponse.streamingBuffer.estimatedRows) > 0) throw new Error('Cannot delete rows on ' + apiResponse.id + ' while table is still streaming data: ' + apiResponse.selfLink + '. last update:' + new Date(parseInt(apiResponse.streamingBuffer.oldestEntryTime)));
+        return Model.query({ query: qstring, useLegacySql: false, });
+      })
       .then(result => cb(null, result))
       .catch(cb);
   } catch (e) {
@@ -863,8 +936,10 @@ const BIGQUERY_ADAPTER = class BigQuery_Adapter {
       }
       this.db_connection.models[this.model.id] = this.model;
     } else {
-      this.model = this.db_connection.models[options.model];
+      this.model = this.db_connection.models[ options.model ];
     }
+    this.modelScheme = options.model;
+    this.modelFields = Object.keys(options.model.tableProperties);
     this.sort = options.sort || 'createdat DESC';
     this.limit = options.limit || 500;
     this.skip = options.skip || 0;
