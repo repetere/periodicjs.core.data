@@ -5,6 +5,7 @@ const Promisie = require('promisie');
 const flatten = require('flat');
 const utility = require('../utility/index');
 const xss_default_whitelist = require(path.join(__dirname, '../defaults/index')).xss_whitelist();
+const objectIdTest = new RegExp(/[a-f0-9]{24}/i);
 
 /**
  * Convenience method for .find mongo method
@@ -247,9 +248,13 @@ const _LOAD = function(options, cb) {
   try {
     let Model = options.model || this.model;
     let query;
-    // console.log('options.query', options.query);
+    // console.log('_LOAD options', options);
+    // console.log('_LOAD options.query', options.query);
     // if(!options.query) console.log({options})
     //Iteratively checks if value was passed in options argument and conditionally assigns the default value if not passed in options
+    if (options.docid && typeof options.docid === 'string') {
+      options.docid = (utility.isObjectId(options.docid)) ? mongoose.Types.ObjectId( options.docid) : options.docid;
+    }
     let { sort, population, fields, docid, } = ['sort', 'population', 'fields', 'docid', ].reduce((result, key) => {
       if (options[key] && !isNaN(Number(options[key]))) options[key] = Number(options[key]);
       result[key] = options[key] || this[key];
@@ -342,6 +347,7 @@ const _UPDATE = function(options, cb) {
     options.track_changes = (typeof options.track_changes === 'boolean') ? options.track_changes : this.track_changes;
     if (!options.id) {
       options.id = options.updatedoc._id;
+      options.id = (utility.isObjectId(options.id)) ? mongoose.Types.ObjectId( options.id) : options.id;
     }
     let changesetData = {
       update: Object.assign({}, options.updatedoc),
@@ -358,6 +364,7 @@ const _UPDATE = function(options, cb) {
             if (originalDoc) {
               return changesetData.original;
             } else {
+              // console.log({ docid: options.id, })
               return this.load({ docid: options.id, });
             }
           })
@@ -393,14 +400,16 @@ const _UPDATE = function(options, cb) {
       .then(originalDoc => {
         if (originalDoc) {
           return changesetData.original;
-        } else if(options.track_changes) {
+        } else if (options.track_changes) {
+          // console.log({ docid: options.id, })
+
           return this.load({ docid: options.id, });
         } else {
           return {};
         }
       })
       .then(originalDoc => {
-        changesetData.original = (typeof originalDoc.toObject === 'function')
+        changesetData.original = (originalDoc && typeof originalDoc.toObject === 'function')
           ? originalDoc.toObject()
           : originalDoc;
         Promisie.parallel({
