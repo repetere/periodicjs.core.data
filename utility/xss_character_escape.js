@@ -1,6 +1,25 @@
 'use strict';
 const xss = require('xss');
 const xssRegexp = /(<([^>]+)>)/ig;
+const vm = require('vm');
+
+/**
+ * returns javascript from a string
+ * @param {String} input - JavaScript code as a string
+ * @returns {Any} output - parsed javascript string as valid JavaScript
+ */
+function parseJavaScript(input) {
+  const sandbox = {
+    output: {},
+  };
+  try {
+    vm.runInNewContext(`output = ${input}`, sandbox);
+    return sandbox.output;
+  } catch (e) {
+    throw(e);
+  }
+}
+exports.parseJavaScript = parseJavaScript;
 
 /**
  * Enforces XSS character escaping rules
@@ -13,8 +32,8 @@ const xssRegexp = /(<([^>]+)>)/ig;
  */
 module.exports = function enforceXSSRules (doc, configuration, options = {}) {
 	if (!options.skip_xss) {
-		if (configuration && options.html_xss) return JSON.parse(xss(JSON.stringify(doc), configuration))
-		else return JSON.parse(JSON.stringify(doc).replace(xssRegexp, ''));
+		if (configuration && options.html_xss) return parseJavaScript(xss(JSON.stringify(doc), configuration))
+		else return parseJavaScript(JSON.stringify(doc).replace(xssRegexp, ''));
 	}
 	else return doc;
 };
