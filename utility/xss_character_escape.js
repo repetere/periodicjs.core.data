@@ -16,6 +16,7 @@ function parseJavaScript(input) {
     vm.runInNewContext(`output = ${input}`, sandbox);
     return sandbox.output;
   } catch (e) {
+		console.warn('WARNING: parseJavaScript InputError', input);
     throw(e);
   }
 }
@@ -30,10 +31,15 @@ exports.parseJavaScript = parseJavaScript;
  * @param {Boolean} [options.skip_xss] If true character escaping is ignored
  * @return {Object}               Returns either original document or object with xss character escaping rules applied
  */
-module.exports = function enforceXSSRules (doc, configuration, options = {}) {
+module.exports = function enforceXSSRules(doc, configuration, options = {}) {
 	if (!options.skip_xss) {
-		if (configuration && options.html_xss) return parseJavaScript(xss(JSON.stringify(doc), configuration))
-		else return parseJavaScript(JSON.stringify(doc).replace(xssRegexp, ''));
+		try {
+			if (configuration && options.html_xss) return parseJavaScript(xss(JSON.stringify(doc), configuration));
+			else return parseJavaScript(JSON.stringify(doc).replace(xssRegexp, ''));
+		} catch (e) {
+			console.warn('WARNING:',e);
+			return parseJavaScript(JSON.stringify(doc).replace(xssRegexp, ''));
+		}
 	}
 	else return doc;
 };
