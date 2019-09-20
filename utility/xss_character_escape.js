@@ -2,6 +2,7 @@
 const xss = require('xss');
 const xssRegexp = /(<([^>]+)>)/ig;
 const vm = require('vm');
+const flat = require('flat');
 
 /**
  * returns javascript from a string
@@ -16,7 +17,7 @@ function parseJavaScript(input) {
     vm.runInNewContext(`output = ${input}`, sandbox);
     return sandbox.output;
   } catch (e) {
-		console.warn('WARNING: parseJavaScript InputError', input);
+		// console.warn('WARNING: parseJavaScript InputError', input);
     throw(e);
   }
 }
@@ -33,12 +34,34 @@ exports.parseJavaScript = parseJavaScript;
  */
 module.exports = function enforceXSSRules(doc, configuration, options = {}) {
 	if (!options.skip_xss) {
+		const errors = [];
 		try {
-			if (configuration && options.html_xss) return parseJavaScript(xss(JSON.stringify(doc), configuration));
-			else return parseJavaScript(JSON.stringify(doc).replace(xssRegexp, ''));
-		} catch (e) {
-			console.warn('WARNING:',e);
-			return parseJavaScript(JSON.stringify(doc).replace(xssRegexp, ''));
+			const docString = JSON.stringify(doc,null,2);
+			if (configuration && options.html_xss) return parseJavaScript(xss(docString, configuration));
+			else return parseJavaScript(docString.replace(xssRegexp, ''));
+		} catch (errorXSS) {
+			errors.push(errorXSS);
+			const docString = JSON.stringify(doc, null, 2);
+			try {
+				return parseJavaScript(docString.replace(xssRegexp, ''));
+			} catch (errorRegEx) {
+				errors.push(errorRegEx);
+				try {
+					const flattenDoc = flat.flatten(doc);
+					const safeDocFlattened = Object.keys(flattenDoc).reduce((result, prop) => {
+						const val = flattenDoc[ prop ];
+						result[ prop ] = typeof val === 'string'
+							? xss(val, configuration)
+							: val;
+						return result;
+					}, {});
+					const safeDoc = flat.unflatten(safeDocFlattened);
+					return safeDoc;
+				} catch (errorFlat) {
+					errors.push(errorFlat);
+					throw errorFlat;
+				}
+			}
 		}
 	}
 	else return doc;
