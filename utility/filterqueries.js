@@ -1,6 +1,7 @@
 'use strict';
 const moment = require('moment');
-
+const mongoose = require('mongoose');
+const mongoid = require('./mongoid');
 
 function get_db_fq_op(options) {
   switch (options.f_op) {
@@ -73,10 +74,13 @@ function getFilterQueries(filterqueries,type) {
   if (Array.isArray(filterqueries) === false) {
     filterqueries = new Array(filterqueries);
   }
-  filterqueries.forEach(function(f_query) {
+  filterqueries.forEach(function (f_query) {
     let orbuilder = f_query.split('|||');
     let orbuilderquery = {};
-    orbuilderquery[orbuilder[0]] = {};
+    orbuilderquery[ orbuilder[ 0 ] ] = {};
+    if (mongoid(orbuilder[ 2 ])) {
+      orbuilder[ 2 ] = mongoose.Types.ObjectId(orbuilder[ 2 ]);
+    }
     if (orbuilder[1] === 'is') {
       orbuilderquery[orbuilder[0]] = orbuilder[2];
     } else if (orbuilder[1] === 'is-date') {
